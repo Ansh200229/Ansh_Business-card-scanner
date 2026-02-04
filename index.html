@@ -34,7 +34,7 @@
     <div class="main-container">
         <!-- Header -->
         <header class="glass-header">
-            <div class="header-content">
+            <div class="header-top">
                 <div class="logo" onclick="window.location.reload()">
                     <i class="fas fa-id-card-alt"></i>
                     <div class="logo-text">
@@ -44,6 +44,25 @@
                 </div>
                 
                 <div class="header-right">
+                    <!-- Search Bar -->
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" 
+                                   id="searchInput" 
+                                   placeholder="Search cards..." 
+                                   oninput="searchCards()"
+                                   onfocus="expandSearch()"
+                                   onblur="collapseSearch()">
+                            <button class="search-clear" onclick="clearSearch()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="search-results" id="searchResults">
+                            <!-- Search results will appear here -->
+                        </div>
+                    </div>
+                    
                     <div class="header-stats">
                         <div class="stat">
                             <div class="stat-icon">
@@ -73,8 +92,31 @@
                 </div>
             </div>
             
+            <!-- Search Filters (Desktop) -->
+            <div class="search-filters" id="searchFilters">
+                <div class="filter-tags">
+                    <span class="filter-tag active" data-filter="all">All Cards</span>
+                    <span class="filter-tag" data-filter="company">Company</span>
+                    <span class="filter-tag" data-filter="contact">Contact</span>
+                    <span class="filter-tag" data-filter="email">Email</span>
+                    <span class="filter-tag" data-filter="phone">Phone</span>
+                </div>
+                <div class="filter-options">
+                    <select id="sortBy" onchange="sortCards()">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="company">Company A-Z</option>
+                        <option value="contact">Contact A-Z</option>
+                    </select>
+                </div>
+            </div>
+            
             <!-- Mobile Menu -->
             <div class="mobile-menu" id="mobileMenu">
+                <div class="menu-search">
+                    <input type="text" placeholder="Search cards..." oninput="searchCardsMobile()">
+                    <i class="fas fa-search"></i>
+                </div>
                 <div class="menu-items">
                     <button class="menu-item" onclick="openCamera('back')">
                         <i class="fas fa-camera"></i>
@@ -310,16 +352,16 @@
                 <div class="sync-status-card">
                     <div class="sync-header">
                         <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Cloud Sync Status</span>
+                        <span>Real-time Cloud Sync</span>
                     </div>
                     <div class="sync-info">
                         <div class="sync-item">
                             <i class="fas fa-check-circle"></i>
-                            <span>All devices sync automatically</span>
+                            <span>Real-time sync across all devices</span>
                         </div>
                         <div class="sync-item">
-                            <i class="fas fa-link"></i>
-                            <span>Access from any device via:</span>
+                            <i class="fas fa-bolt"></i>
+                            <span>Changes sync instantly</span>
                         </div>
                         <div class="sync-url">
                             <code>https://ansh200229.github.io/Ansh_Business-card-scanner/</code>
@@ -345,6 +387,42 @@
                         <button class="view-btn" onclick="refreshCards()">
                             <i class="fas fa-redo"></i>
                         </button>
+                        <button class="view-btn" onclick="toggleSearchPanel()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Search Panel -->
+                <div class="search-panel" id="searchPanel" style="display: none;">
+                    <div class="search-panel-header">
+                        <h3><i class="fas fa-search"></i> Advanced Search</h3>
+                        <button class="close-search" onclick="toggleSearchPanel()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="search-filters">
+                        <div class="filter-group">
+                            <label>Search In:</label>
+                            <div class="filter-options">
+                                <label><input type="checkbox" name="searchField" value="companyName" checked> Company</label>
+                                <label><input type="checkbox" name="searchField" value="contactPerson" checked> Contact</label>
+                                <label><input type="checkbox" name="searchField" value="email" checked> Email</label>
+                                <label><input type="checkbox" name="searchField" value="phone" checked> Phone</label>
+                                <label><input type="checkbox" name="searchField" value="jobTitle" checked> Job Title</label>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label>Date Range:</label>
+                            <div class="date-range">
+                                <input type="date" id="dateFrom">
+                                <span>to</span>
+                                <input type="date" id="dateTo">
+                            </div>
+                        </div>
+                        <button class="btn-apply-filters" onclick="applyAdvancedSearch()">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
                     </div>
                 </div>
                 
@@ -361,11 +439,20 @@
                             <div class="list-column">Company</div>
                             <div class="list-column">Contact</div>
                             <div class="list-column">Phone</div>
+                            <div class="list-column">Date</div>
                             <div class="list-column">Actions</div>
                         </div>
                         <div class="list-body" id="cardsListBody">
                             <!-- List items will be loaded here -->
                         </div>
+                    </div>
+                    
+                    <!-- Search Results Info -->
+                    <div class="search-info" id="searchInfo" style="display: none;">
+                        <span id="searchResultsCount">0 results</span>
+                        <button class="btn-clear-search" onclick="clearSearch()">
+                            <i class="fas fa-times"></i> Clear Search
+                        </button>
                     </div>
                     
                     <!-- Empty State -->
@@ -550,18 +637,18 @@
                 <div class="settings-section">
                     <h4><i class="fas fa-sync"></i> Sync Settings</h4>
                     <div class="setting-item">
-                        <label>Auto Sync</label>
+                        <label>Real-time Sync</label>
                         <label class="switch">
-                            <input type="checkbox" id="autoSync" checked>
+                            <input type="checkbox" id="realTimeSync" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="setting-item">
                         <label>Sync Frequency</label>
                         <select id="syncFrequency">
-                            <option value="30000">Every 30 seconds</option>
-                            <option value="60000">Every minute</option>
-                            <option value="300000">Every 5 minutes</option>
+                            <option value="1000">Real-time (1 sec)</option>
+                            <option value="5000">Fast (5 sec)</option>
+                            <option value="30000">Normal (30 sec)</option>
                         </select>
                     </div>
                 </div>
@@ -596,6 +683,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Real-time Sync Indicator -->
+    <div class="sync-indicator" id="syncIndicator">
+        <i class="fas fa-sync-alt fa-spin"></i>
+        <span>Syncing...</span>
     </div>
 
     <!-- Toast Container -->
