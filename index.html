@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -55,9 +57,13 @@
                             <p>Upload Image</p>
                             <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                         </div>
-                        <div class="upload-option" onclick="openCamera()">
+                        <div class="upload-option" onclick="openCamera('back')">
                             <i class="fas fa-camera"></i>
-                            <p>Use Camera</p>
+                            <p>Use Back Camera</p>
+                        </div>
+                        <div class="upload-option" onclick="openCamera('front')">
+                            <i class="fas fa-mobile-alt"></i>
+                            <p>Use Front Camera</p>
                         </div>
                     </div>
                     
@@ -75,6 +81,18 @@
                             <input type="file" id="cardImageInput" accept="image/*" onchange="previewImage(event)">
                         </label>
                         <span id="fileName">No file chosen</span>
+                    </div>
+                    
+                    <div class="ocr-controls">
+                        <button class="btn-ocr" onclick="startOCRScan()" id="ocrBtn">
+                            <i class="fas fa-search"></i> Scan Text from Image
+                        </button>
+                        <div class="ocr-progress" id="ocrProgress" style="display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span id="progressText">0%</span>
+                        </div>
                     </div>
                 </div>
 
@@ -115,29 +133,82 @@
             </div>
 
             <div class="details-section">
-                <h2><i class="fas fa-info-circle"></i> Card Details</h2>
+                <h2><i class="fas fa-info-circle"></i> Card Details <span class="ai-badge">AI Powered</span></h2>
+                
+                <!-- OCR Results Display -->
+                <div class="ocr-results-section" id="ocrResultsSection" style="display: none;">
+                    <h3><i class="fas fa-robot"></i> AI Scan Results</h3>
+                    <div class="ocr-results" id="ocrResults">
+                        <!-- Results will be displayed here -->
+                    </div>
+                    <div class="ocr-actions">
+                        <button class="btn-apply" onclick="applyOCRResults()">
+                            <i class="fas fa-check"></i> Apply All Results
+                        </button>
+                        <button class="btn-clear-ocr" onclick="clearOCRResults()">
+                            <i class="fas fa-times"></i> Clear Results
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="details-grid">
                     <div class="detail-item">
                         <label><i class="fas fa-building"></i> Company Name</label>
                         <input type="text" id="companyName" placeholder="Enter company name">
+                        <button class="btn-apply-single" onclick="applySingleField('companyName')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                     <div class="detail-item">
                         <label><i class="fas fa-user"></i> Contact Person</label>
                         <input type="text" id="contactPerson" placeholder="Enter contact person">
+                        <button class="btn-apply-single" onclick="applySingleField('contactPerson')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                     <div class="detail-item">
                         <label><i class="fas fa-globe"></i> Website</label>
                         <input type="text" id="website" placeholder="Enter website URL">
+                        <button class="btn-apply-single" onclick="applySingleField('website')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                     <div class="detail-item">
                         <label><i class="fas fa-map-marker-alt"></i> Location</label>
                         <input type="text" id="location" placeholder="Enter location">
+                        <button class="btn-apply-single" onclick="applySingleField('location')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="email" placeholder="Enter email address">
+                        <button class="btn-apply-single" onclick="applySingleField('email')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-phone"></i> Phone</label>
+                        <input type="tel" id="phone" placeholder="Enter phone number">
+                        <button class="btn-apply-single" onclick="applySingleField('phone')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-id-badge"></i> Job Title</label>
+                        <input type="text" id="jobTitle" placeholder="Enter job title">
+                        <button class="btn-apply-single" onclick="applySingleField('jobTitle')" style="display: none;">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                 </div>
                 
                 <div class="action-buttons">
                     <button class="btn-save" onclick="saveCard()">
                         <i class="fas fa-save"></i> Save Card
+                    </button>
+                    <button class="btn-scan-auto" onclick="captureAndScanAutomatically()">
+                        <i class="fas fa-robot"></i> Auto Capture & Scan
                     </button>
                     <button class="btn-clear" onclick="clearForm()">
                         <i class="fas fa-trash"></i> Clear All
@@ -147,22 +218,45 @@
         </main>
 
         <footer>
-            <p>Business Card Scanner &copy; 2024 | All cards are synced across your devices</p>
+            <p>Business Card Scanner &copy; 2024 | AI-Powered OCR | All cards are synced across your devices</p>
         </footer>
     </div>
 
-    <!-- Camera Modal -->
+    <!-- Camera Modal with Back Camera Support -->
     <div id="cameraModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-camera"></i> Camera Scanner</h3>
+                <h3><i class="fas fa-camera"></i> 
+                    <span id="cameraType">Back Camera</span> Scanner
+                    <div class="camera-switch">
+                        <button class="btn-camera-switch" onclick="switchCamera()">
+                            <i class="fas fa-sync-alt"></i> Switch Camera
+                        </button>
+                    </div>
+                </h3>
                 <span class="close" onclick="closeCamera()">&times;</span>
             </div>
             <div class="modal-body">
-                <video id="cameraFeed" autoplay></video>
-                <button class="btn-capture" onclick="captureImage()">
-                    <i class="fas fa-camera"></i> Capture Card
-                </button>
+                <div class="camera-container">
+                    <video id="cameraFeed" autoplay playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="scan-area">
+                            <div class="scan-corner tl"></div>
+                            <div class="scan-corner tr"></div>
+                            <div class="scan-corner bl"></div>
+                            <div class="scan-corner br"></div>
+                            <div class="scan-line"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-controls">
+                    <button class="btn-capture" onclick="captureImage()">
+                        <i class="fas fa-camera"></i> Capture Card
+                    </button>
+                    <button class="btn-flash" onclick="toggleFlash()" id="flashBtn">
+                        <i class="fas fa-bolt"></i> Flash Off
+                    </button>
+                </div>
             </div>
         </div>
     </div>
