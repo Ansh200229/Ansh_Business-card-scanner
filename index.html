@@ -2,1324 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Business Card Scanner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <style>
-        /* Responsive Design */
-        * { box-sizing: border-box; }
-        body { 
-            background-color: #f8f9fa; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            margin: 0; padding: 0; min-height: 100vh;
-        }
-        .container { 
-            width: 100%; max-width: 1200px; margin: 0 auto; padding: 15px;
-        }
-        @media (max-width: 768px) { .container { padding: 10px; } }
-        
-        /* Cards & Layout */
-        .card { 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; border: none;
-            margin-bottom: 20px; overflow: hidden;
-        }
-        @media (max-width: 768px) { .card { border-radius: 10px; margin-bottom: 15px; } }
-        .card.p-4 { padding: 20px !important; }
-        @media (max-width: 768px) { .card.p-4 { padding: 15px !important; } }
-        
-        /* Typography */
-        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; }
-        @media (max-width: 768px) { h1 { font-size: 1.5rem; margin-bottom: 0.8rem; } }
-        
-        /* Buttons */
-        .btn {
-            font-size: 0.95rem; padding: 8px 16px; border-radius: 8px; transition: all 0.2s;
-            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-            white-space: nowrap; min-height: 44px;
-        }
-        @media (max-width: 768px) {
-            .btn { font-size: 0.85rem; padding: 10px 14px; min-width: 44px; }
-        }
-        .btn-primary { background-color: #007bff; border-color: #007bff; }
-        .btn-primary:hover { background-color: #0056b3; transform: translateY(-1px); }
-        .btn-success { background-color: #28a745; border-color: #28a745; }
-        .btn-success:hover { background-color: #1e7e34; transform: translateY(-1px); }
-        .btn-danger { background-color: #dc3545; border-color: #dc3545; }
-        .btn-danger:hover { background-color: #c82333; transform: translateY(-1px); }
-        .btn-warning { background-color: #ffc107; border-color: #ffc107; color: #212529; }
-        .btn-warning:hover { background-color: #e0a800; transform: translateY(-1px); }
-        .btn-info { background-color: #17a2b8; border-color: #17a2b8; }
-        .btn-info:hover { background-color: #138496; transform: translateY(-1px); }
-        
-        /* Button Container */
-        .button-container {
-            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0;
-        }
-        @media (max-width: 768px) {
-            .button-container { gap: 6px; margin: 15px 0; }
-            .button-container .btn { flex: 1; min-width: calc(50% - 6px); max-width: calc(50% - 6px); }
-        }
-        
-        /* Table */
-        .table-responsive {
-            overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; border-radius: 8px;
-        }
-        table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; }
-        @media (max-width: 768px) {
-            table { font-size: 0.85rem; }
-            th, td { padding: 10px 8px !important; }
-            .table-stack-mobile { display: block; }
-            .table-stack-mobile thead { display: none; }
-            .table-stack-mobile tbody, .table-stack-mobile tr { display: block; }
-            .table-stack-mobile td {
-                display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 15px !important; border-bottom: 1px solid #dee2e6; text-align: right;
-            }
-            .table-stack-mobile td:before {
-                content: attr(data-label); font-weight: 600; color: #495057; text-align: left; flex: 1;
-            }
-            .table-stack-mobile td:last-child { border-bottom: 2px solid #dee2e6; }
-        }
-        .table-dark th { background-color: #343a40; border: none; font-weight: 600; padding: 15px 12px; }
-        
-        /* Form Elements */
-        .form-label { font-weight: 600; margin-bottom: 8px; font-size: 0.95rem; }
-        .form-control {
-            border-radius: 8px; border: 1.5px solid #ced4da; padding: 10px 12px; font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-        @media (max-width: 768px) { .form-control { padding: 12px 14px; font-size: 1rem; } }
-        .form-control:focus { border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
-        
-        /* Tabs */
-        .nav-tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 20px; }
-        .nav-tabs .nav-link {
-            border: none; border-bottom: 3px solid transparent; color: #6c757d; font-weight: 500;
-            padding: 12px 20px; border-radius: 0; transition: all 0.2s;
-        }
-        @media (max-width: 768px) {
-            .nav-tabs .nav-link { padding: 10px 15px; font-size: 0.9rem; flex: 1; text-align: center; }
-            .nav-tabs { display: flex; }
-        }
-        .nav-tabs .nav-link:hover { border-color: #dee2e6; color: #495057; }
-        .nav-tabs .nav-link.active { color: #007bff; border-color: #007bff; background-color: transparent; }
-        
-        /* Camera */
-        .camera-container { display: none; margin: 20px 0; text-align: center; }
-        #cameraPreview {
-            width: 100%; max-width: 500px; height: auto; aspect-ratio: 4/3;
-            border: 2px solid #ddd; border-radius: 10px; background: #000;
-        }
-        @media (max-width: 768px) { #cameraPreview { max-width: 100%; border-radius: 8px; } }
-        .camera-buttons { margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        @media (max-width: 768px) { .camera-buttons { margin-top: 12px; gap: 8px; } }
-        .image-preview { max-width: 150px; height: auto; margin: 10px 0; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        @media (max-width: 768px) { .image-preview { max-width: 120px; } }
-        
-        /* Loading & Messages */
-        .loading { color: #007bff; font-style: italic; padding: 20px; text-align: center; }
-        .preview-text { 
-            background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;
-            max-height: 250px; overflow-y: auto; font-size: 0.9rem; line-height: 1.5;
-        }
-        @media (max-width: 768px) { .preview-text { padding: 12px; max-height: 200px; font-size: 0.85rem; } }
-        
-        /* Correction Section */
-        .correct-btn { margin: 2px; padding: 4px 10px; font-size: 0.8rem; border-radius: 4px; }
-        .extraction-row { background: #e9ecef; margin: 8px 0; padding: 12px; border-radius: 6px; font-size: 0.9rem; }
-        .capture-instruction { color: #666; font-size: 0.85em; margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px; }
-        
-        /* Toast */
-        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 350px; width: 90%; }
-        @media (max-width: 768px) {
-            .toast-container { top: 10px; right: 10px; left: 10px; width: auto; max-width: none; }
-        }
-        
-        /* Search & Status */
-        .search-container { margin-bottom: 20px; position: relative; }
-        .search-container input { width: 100%; max-width: 400px; margin: 0 auto; display: block; }
-        @media (max-width: 768px) { .search-container input { max-width: 100%; } }
-        .row-count {
-            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-            background: #e9ecef; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500;
-        }
-        @media (max-width: 768px) {
-            .row-count { position: relative; display: inline-block; margin-top: 10px; transform: none; }
-        }
-        
-        /* Sync Status */
-        .sync-status {
-            display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;
-            font-size: 0.8rem; margin-left: 10px;
-        }
-        .sync-online { background: #d4edda; color: #155724; }
-        .sync-offline { background: #f8d7da; color: #721c24; }
-        
-        /* Hide/Show Elements */
-        .desktop-only { display: block; }
-        .mobile-only { display: none; }
-        @media (max-width: 768px) {
-            .desktop-only { display: none !important; }
-            .mobile-only { display: block !important; }
-        }
-        
-        /* QR Code */
-        #qrCodeCanvas { max-width: 250px; margin: 0 auto; display: block; }
-        
-        /* Dark Mode */
-        @media (prefers-color-scheme: dark) {
-            body { background-color: #121212; color: #e0e0e0; }
-            .card { background-color: #1e1e1e; color: #e0e0e0; }
-            .table-dark th { background-color: #2d2d2d; color: #fff; }
-            .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255,255,255,0.05); }
-            .preview-text { background-color: #2d2d2d; color: #e0e0e0; }
-        }
-    </style>
 </head>
 <body>
-    <div class="container safe-area-top">
-        <!-- Toast Container -->
-        <div class="toast-container" id="toastContainer"></div>
-        
-        <!-- Main Card -->
-        <div class="card p-4 mb-4">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h1 class="mb-0">Business Card Scanner</h1>
-                <div class="d-flex align-items-center">
-                    <div class="sync-status sync-offline" id="syncStatus">
-                        <span id="syncIcon">⚠️</span>
-                        <span id="syncText">Offline</span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-info ms-2" onclick="showSyncModal()">
-                        <span class="mobile-only">🔄</span> Sync
-                    </button>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-id-card"></i> Business Card Scanner</h1>
+            <div class="sync-status">
+                <div class="status-indicator online" id="statusIndicator">
+                    <i class="fas fa-circle"></i> Online
+                </div>
+                <div class="sync-label">
+                    <i class="fas fa-sync-alt"></i> Sync Across Devices
                 </div>
             </div>
-            
-            <p class="text-center text-muted mb-4">Upload or capture business card images. AI-powered OCR extracts details.</p>
-            
-            <!-- Device ID -->
-            <div class="alert alert-info py-2 mb-3" id="deviceIdAlert" style="display: none;">
-                <small><strong>Device ID:</strong> <span id="deviceIdDisplay"></span></small>
-                <button class="btn btn-sm btn-outline-dark ms-2" onclick="copyDeviceId()">Copy</button>
-                <button class="btn btn-sm btn-outline-dark ms-1" onclick="showQRCode()">Show QR</button>
+        </header>
+
+        <main>
+            <div class="device-section">
+                <h2><i class="fas fa-mobile-alt"></i> Device ID</h2>
+                <div class="device-id-container">
+                    <div class="current-device">
+                        <p>Your Device ID:</p>
+                        <div class="device-id-display">
+                            <span id="deviceIdDisplay">Loading...</span>
+                            <button class="btn-copy" onclick="copyDeviceId()">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-controls">
+                        <button class="btn-sync" onclick="forceSync()">
+                            <i class="fas fa-sync"></i> Manual Sync
+                        </button>
+                        <span id="lastSync">Last sync: Never</span>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Tabs -->
-            <ul class="nav nav-tabs" id="imageSourceTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button">Upload Image</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" onclick="handleCameraTabClick()">Use Camera</button>
-                </li>
-            </ul>
-            
-            <!-- Tab Content -->
-            <div class="tab-content" id="imageSourceTabContent">
-                <!-- Upload Tab -->
-                <div class="tab-pane fade show active" id="upload" role="tabpanel">
-                    <div class="row g-3 mb-3 mt-3">
-                        <div class="col-12 col-md-6">
-                            <label for="frontImage" class="form-label">Front Image:</label>
-                            <input type="file" class="form-control" id="frontImage" accept="image/*" capture="environment">
-                            <div class="mt-2 text-center">
-                                <img id="frontPreview" class="image-preview" style="display:none;">
-                            </div>
+
+            <div class="main-content">
+                <div class="card-section">
+                    <h2><i class="fas fa-upload"></i> Upload Card</h2>
+                    <div class="upload-options">
+                        <div class="upload-option" onclick="openFilePicker()">
+                            <i class="fas fa-image"></i>
+                            <p>Upload Image</p>
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label for="backImage" class="form-label">Back Image (optional):</label>
-                            <input type="file" class="form-control" id="backImage" accept="image/*" capture="environment">
-                            <div class="mt-2 text-center">
-                                <img id="backPreview" class="image-preview" style="display:none;">
-                            </div>
+                        <div class="upload-option" onclick="openCamera()">
+                            <i class="fas fa-camera"></i>
+                            <p>Use Camera</p>
                         </div>
+                    </div>
+                    
+                    <div class="image-preview" id="imagePreview">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-id-card"></i>
+                            <p>Front Image Preview</p>
+                        </div>
+                        <img id="previewImage" alt="Card Preview" style="display: none;">
+                    </div>
+                    
+                    <div class="file-input-container">
+                        <label class="btn-file">
+                            <i class="fas fa-folder-open"></i> Choose File
+                            <input type="file" id="cardImageInput" accept="image/*" onchange="previewImage(event)">
+                        </label>
+                        <span id="fileName">No file chosen</span>
+                    </div>
+                </div>
+
+                <div class="sync-section">
+                    <h2><i class="fas fa-exchange-alt"></i> Import/Export Data</h2>
+                    
+                    <div class="import-section">
+                        <h3><i class="fas fa-qrcode"></i> Scan QR Code to Import Data:</h3>
+                        <div class="qr-scanner-container">
+                            <div id="qrScanner"></div>
+                            <button class="btn-toggle-scan" onclick="toggleQRScanner()" id="toggleScannerBtn">
+                                <i class="fas fa-qrcode"></i> Start QR Scanner
+                            </button>
+                        </div>
+                        
+                        <div class="manual-import">
+                            <h4>Or Enter Device ID Manually:</h4>
+                            <div class="input-group">
+                                <input type="text" id="deviceIdInput" 
+                                       placeholder="Enter Device ID (e.g., device_1770194567759_6zk37prj4)"
+                                       value="">
+                                <button class="btn-import" onclick="importData()" id="importBtn">
+                                    <i class="fas fa-download"></i> Import Data
+                                </button>
+                            </div>
+                            <div class="import-status" id="importStatus"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-section">
+                        <h3><i class="fas fa-share-square"></i> Export to QR:</h3>
+                        <button class="btn-export" onclick="exportToQR()">
+                            <i class="fas fa-qrcode"></i> Generate QR Code
+                        </button>
+                        <div id="qrCodeOutput" class="qr-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="details-section">
+                <h2><i class="fas fa-info-circle"></i> Card Details</h2>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <label><i class="fas fa-building"></i> Company Name</label>
+                        <input type="text" id="companyName" placeholder="Enter company name">
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-user"></i> Contact Person</label>
+                        <input type="text" id="contactPerson" placeholder="Enter contact person">
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-globe"></i> Website</label>
+                        <input type="text" id="website" placeholder="Enter website URL">
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                        <input type="text" id="location" placeholder="Enter location">
                     </div>
                 </div>
                 
-                <!-- Camera Tab -->
-                <div class="tab-pane fade" id="camera" role="tabpanel">
-                    <div class="camera-container" id="cameraContainer">
-                        <video id="cameraPreview" autoplay playsinline></video>
-                        <div class="camera-buttons">
-                            <button class="btn btn-primary" onclick="captureFront()">
-                                <span class="mobile-only">📷</span> Capture Front
-                            </button>
-                            <button class="btn btn-secondary" id="captureBackBtn" onclick="captureBack()">
-                                <span class="mobile-only">📷</span> Capture Back
-                            </button>
-                            <button class="btn btn-danger" onclick="stopCamera()">
-                                <span class="mobile-only">❌</span> Stop Camera
-                            </button>
-                        </div>
-                        <div class="capture-instruction" id="captureInstruction">
-                            Camera will close automatically after capture
-                        </div>
-                        <div class="row mt-3 g-3">
-                            <div class="col-12 col-md-6">
-                                <h6 class="text-center">Front Capture:</h6>
-                                <div class="text-center">
-                                    <img id="frontCameraPreview" class="image-preview" style="display:none;">
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <h6 class="text-center">Back Capture:</h6>
-                                <div class="text-center">
-                                    <img id="backCameraPreview" class="image-preview" style="display:none;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <button class="btn btn-success" onclick="startCamera()" id="startCameraBtn">
-                            <span class="mobile-only">📱</span> Start Camera
-                        </button>
-                    </div>
+                <div class="action-buttons">
+                    <button class="btn-save" onclick="saveCard()">
+                        <i class="fas fa-save"></i> Save Card
+                    </button>
+                    <button class="btn-clear" onclick="clearForm()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
                 </div>
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="button-container">
-                <button class="btn btn-primary" onclick="scanCards()">
-                    <span class="mobile-only">🤖</span> Scan Card
-                </button>
-                <button class="btn btn-success" onclick="exportToExcel()">
-                    <span class="mobile-only">📊</span> Export Excel
-                </button>
-                <button class="btn btn-info" onclick="saveData()">
-                    <span class="mobile-only">💾</span> Save Data
-                </button>
-                <button class="btn btn-warning" onclick="loadData()">
-                    <span class="mobile-only">📂</span> Load Data
-                </button>
-                <button class="btn btn-danger" onclick="clearData()">
-                    <span class="mobile-only">🗑️</span> Clear Data
-                </button>
-            </div>
-            
-            <!-- Manual Correction -->
-            <div id="correctionSection" style="display: none;" class="mt-4">
-                <h5>Verify & Correct:</h5>
-                <div id="correctionFields"></div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-success" onclick="saveCorrectedData()">Save Corrected Data</button>
-                </div>
-            </div>
-            
-            <!-- Preview -->
-            <div id="previewSection" style="display: none;">
-                <h5>AI Analysis Results:</h5>
-                <div class="preview-text" id="extractedText"></div>
-            </div>
-        </div>
-        
-        <!-- Data Table -->
-        <div class="card p-4">
-            <div class="search-container">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search in table...">
-                <span class="row-count" id="rowCount">0 cards</span>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-hover table-stack-mobile" id="dataTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th data-label="Company">Company Name</th>
-                            <th data-label="Contact">Contact Person</th>
-                            <th data-label="Mobile">Mobile Number</th>
-                            <th data-label="Email">Email ID</th>
-                            <th data-label="Designation">Designation</th>
-                            <th data-label="Website">Website</th>
-                            <th data-label="Location">Location</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
-        </div>
+        </main>
+
+        <footer>
+            <p>Business Card Scanner &copy; 2024 | All cards are synced across your devices</p>
+        </footer>
     </div>
-    
-    <!-- Sync Modal -->
-    <div class="modal fade" id="syncModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Sync Across Devices</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Your Device ID:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="modalDeviceId" readonly>
-                            <button class="btn btn-outline-secondary" onclick="copyDeviceId()">Copy</button>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Scan QR Code to Import Data:</label>
-                        <div class="text-center">
-                            <canvas id="qrCodeCanvas"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Or Enter QR Code Data:</label>
-                        <textarea class="form-control" id="qrDataInput" rows="3" placeholder="Paste QR code data here"></textarea>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary" onclick="importFromQR()">Import Data</button>
-                        <button class="btn btn-outline-secondary" onclick="exportToQR()">Export to QR</button>
-                    </div>
-                </div>
+
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> Camera Scanner</h3>
+                <span class="close" onclick="closeCamera()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <video id="cameraFeed" autoplay></video>
+                <button class="btn-capture" onclick="captureImage()">
+                    <i class="fas fa-camera"></i> Capture Card
+                </button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Global variables
-        let stream = null;
-        let frontCameraImage = null;
-        let backCameraImage = null;
-        let currentExtractedData = null;
-        let rawOcrText = '';
-        let autoCloseTimer = null;
-        let deviceId = null;
-        
-        // Initialize on load
-        window.onload = function() {
-            initializeApp();
-            setupEventListeners();
-            checkNetworkStatus();
-        };
-        
-        function initializeApp() {
-            // Get or create device ID
-            deviceId = localStorage.getItem('businessCardDeviceId');
-            if (!deviceId) {
-                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('businessCardDeviceId', deviceId);
-            }
-            
-            // Update UI
-            document.getElementById('deviceIdDisplay').textContent = deviceId;
-            document.getElementById('modalDeviceId').value = deviceId;
-            document.getElementById('deviceIdAlert').style.display = 'block';
-            
-            // Load saved data
-            loadData();
-            
-            // Setup image previews
-            document.getElementById('frontImage').addEventListener('change', function(e) {
-                previewImage(e.target, 'frontPreview');
-            });
-            document.getElementById('backImage').addEventListener('change', function(e) {
-                previewImage(e.target, 'backPreview');
-            });
-            
-            updateRowCount();
-            showToast('App loaded!', 'info');
-        }
-        
-        // Toast notification system
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toastId = 'toast-' + Date.now();
-            
-            const typeConfig = {
-                success: { bg: 'bg-success', icon: '✅' },
-                error: { bg: 'bg-danger', icon: '❌' },
-                warning: { bg: 'bg-warning', icon: '⚠️' },
-                info: { bg: 'bg-info', icon: 'ℹ️' }
-            };
-            
-            const config = typeConfig[type] || typeConfig.info;
-            
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white ${config.bg} border-0`;
-            toast.id = toastId;
-            toast.setAttribute('role', 'alert');
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <span style="margin-right: 8px;">${config.icon}</span>
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${toastId}').remove()"></button>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (document.getElementById(toastId)) {
-                    document.getElementById(toastId).remove();
-                }
-            }, 5000);
-        }
-        
-        // Network status
-        function checkNetworkStatus() {
-            const isOnline = navigator.onLine;
-            updateSyncStatus(isOnline);
-            
-            window.addEventListener('online', () => {
-                updateSyncStatus(true);
-                showToast('Back online!', 'success');
-            });
-            
-            window.addEventListener('offline', () => {
-                updateSyncStatus(false);
-                showToast('You are offline', 'warning');
-            });
-        }
-        
-        function updateSyncStatus(online) {
-            const status = document.getElementById('syncStatus');
-            const icon = document.getElementById('syncIcon');
-            const text = document.getElementById('syncText');
-            
-            if (online) {
-                status.className = 'sync-status sync-online';
-                icon.textContent = '✅';
-                text.textContent = 'Online';
-            } else {
-                status.className = 'sync-status sync-offline';
-                icon.textContent = '⚠️';
-                text.textContent = 'Offline';
-            }
-        }
-        
-        // Camera functions
-        function handleCameraTabClick() {
-            if (!stream) {
-                setTimeout(startCamera, 100);
-            }
-        }
-        
-        function previewImage(input, previewId) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById(previewId);
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-        
-        async function startCamera() {
-            try {
-                stopCamera();
-                
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false 
-                });
-                
-                const video = document.getElementById('cameraPreview');
-                video.srcObject = stream;
-                document.getElementById('cameraContainer').style.display = 'block';
-                document.getElementById('startCameraBtn').style.display = 'none';
-                document.getElementById('captureInstruction').style.display = 'block';
-                
-                // Clear previous images
-                document.getElementById('frontCameraPreview').style.display = 'none';
-                document.getElementById('backCameraPreview').style.display = 'none';
-                frontCameraImage = null;
-                backCameraImage = null;
-                
-            } catch (err) {
-                showToast('Cannot access camera', 'error');
-                document.getElementById('upload-tab').click();
-            }
-        }
-        
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            document.getElementById('cameraContainer').style.display = 'none';
-            document.getElementById('startCameraBtn').style.display = 'inline-block';
-            document.getElementById('captureInstruction').style.display = 'none';
-            
-            if (autoCloseTimer) {
-                clearTimeout(autoCloseTimer);
-                autoCloseTimer = null;
-            }
-        }
-        
-        function captureFront() {
-            if (!stream) {
-                showToast('Camera is not active', 'warning');
-                return;
-            }
-            
-            captureImage('frontCameraPreview');
-            frontCameraImage = getCanvasImage();
-            
-            document.getElementById('captureBackBtn').focus();
-            document.getElementById('captureInstruction').innerHTML = 
-                'Front captured! Camera will close in 5 seconds...';
-            
-            setupAutoClose();
-            showToast('Front image captured!', 'success');
-        }
-        
-        function captureBack() {
-            if (!stream) {
-                showToast('Camera is not active', 'warning');
-                return;
-            }
-            
-            captureImage('backCameraPreview');
-            backCameraImage = getCanvasImage();
-            
-            document.getElementById('captureInstruction').innerHTML = 
-                'Both sides captured! Camera will close in 3 seconds...';
-            
-            setupAutoClose(3000, true);
-            showToast('Back image captured!', 'success');
-        }
-        
-        function captureImage(previewId) {
-            const video = document.getElementById('cameraPreview');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Flash effect
-            const flash = document.createElement('div');
-            flash.style.position = 'fixed';
-            flash.style.top = '0';
-            flash.style.left = '0';
-            flash.style.width = '100%';
-            flash.style.height = '100%';
-            flash.style.backgroundColor = 'white';
-            flash.style.opacity = '0.7';
-            flash.style.zIndex = '9999';
-            flash.style.pointerEvents = 'none';
-            document.body.appendChild(flash);
-            
-            setTimeout(() => {
-                document.body.removeChild(flash);
-            }, 200);
-            
-            const img = document.getElementById(previewId);
-            img.src = canvas.toDataURL('image/jpeg');
-            img.style.display = 'block';
-        }
-        
-        function getCanvasImage() {
-            const video = document.getElementById('cameraPreview');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            return canvas.toDataURL('image/jpeg');
-        }
-        
-        function setupAutoClose(delay = 5000, bothCaptured = false) {
-            if (autoCloseTimer) {
-                clearTimeout(autoCloseTimer);
-            }
-            
-            autoCloseTimer = setTimeout(() => {
-                stopCamera();
-                
-                if (bothCaptured) {
-                    setTimeout(() => {
-                        document.getElementById('upload-tab').click();
-                    }, 500);
-                }
-            }, delay);
-        }
-        
-        function dataURLtoFile(dataurl, filename) {
-            const arr = dataurl.split(',');
-            const mime = arr[0].match(/:(.*?);/)[1];
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            return new File([u8arr], filename, { type: mime });
-        }
-        
-        // OCR Scanning
-        async function scanCards() {
-            let frontFile, backFile;
-            let usingCamera = false;
-            
-            const activeTab = document.querySelector('#imageSourceTabContent .tab-pane.active').id;
-            
-            if (activeTab === 'camera') {
-                usingCamera = true;
-                if (!frontCameraImage) {
-                    showToast('Please capture front image first!', 'warning');
-                    return;
-                }
-                frontFile = dataURLtoFile(frontCameraImage, 'front.jpg');
-                if (backCameraImage) {
-                    backFile = dataURLtoFile(backCameraImage, 'back.jpg');
-                }
-            } else {
-                frontFile = document.getElementById('frontImage').files[0];
-                if (!frontFile) {
-                    if (frontCameraImage) {
-                        usingCamera = true;
-                        frontFile = dataURLtoFile(frontCameraImage, 'front.jpg');
-                        if (backCameraImage) {
-                            backFile = dataURLtoFile(backCameraImage, 'back.jpg');
-                        }
-                    } else {
-                        showToast('Please upload or capture an image!', 'warning');
-                        return;
-                    }
-                } else {
-                    backFile = document.getElementById('backImage').files[0];
-                }
-            }
-            
-            if (stream || usingCamera) {
-                stopCamera();
-            }
-            
-            const tableBody = document.getElementById('tableBody');
-            const loadingRow = document.createElement('tr');
-            loadingRow.innerHTML = '<td colspan="7" class="loading text-center">AI Processing... This may take 15-30 seconds.</td>';
-            tableBody.appendChild(loadingRow);
-            
-            try {
-                document.getElementById('previewSection').style.display = 'block';
-                document.getElementById('correctionSection').style.display = 'none';
-                
-                // OCR Processing
-                const worker = await Tesseract.createWorker();
-                await worker.loadLanguage('eng');
-                await worker.initialize('eng');
-                
-                const frontResult = await worker.recognize(frontFile);
-                let frontText = frontResult.data.text;
-                
-                let backText = '';
-                if (backFile) {
-                    const backResult = await worker.recognize(backFile);
-                    backText = backResult.data.text;
-                }
-                
-                await worker.terminate();
-                
-                rawOcrText = frontText + '\n' + backText;
-                
-                // AI Extraction
-                currentExtractedData = extractBusinessCardDataSmart(rawOcrText);
-                
-                // Show results
-                document.getElementById('extractedText').innerHTML = `
-                    <strong>Raw OCR Text:</strong><br>
-                    <pre>${rawOcrText}</pre><br>
-                    <strong>AI Extraction Results:</strong><br>
-                    ${displayExtractionResults(currentExtractedData)}
-                `;
-                
-                // Show correction interface
-                showCorrectionInterface(currentExtractedData);
-                
-                tableBody.removeChild(loadingRow);
-                resetInputs(usingCamera);
-                
-            } catch (error) {
-                showToast('Error during scanning: ' + error.message, 'error');
-                tableBody.removeChild(loadingRow);
-            }
-        }
-        
-        // AI Extraction Functions
-        function extractBusinessCardDataSmart(text) {
-            text = text.replace(/\s+/g, ' ').trim();
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            
-            const data = {
-                company: '',
-                name: '',
-                mobile: '',
-                email: '',
-                designation: '',
-                website: '',
-                location: ''
-            };
-            
-            // Extract EMAIL
-            const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
-            const emails = [...text.matchAll(emailRegex)];
-            if (emails.length > 0) {
-                data.email = emails[0][0];
-                const emailName = emails[0][0].split('@')[0];
-                const nameParts = emailName.replace(/[._-]/g, ' ').split(' ');
-                if (nameParts.length >= 2) {
-                    const potentialName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-                    if (!data.name) data.name = potentialName;
-                }
-            }
-            
-            // Extract PHONE
-            const phoneRegex = /(\+?(\d[\d\s-()]{7,}\d))/g;
-            const phones = [...text.matchAll(phoneRegex)];
-            if (phones.length > 0) {
-                let phone = phones[0][0].replace(/\s+/g, '').replace(/[()\-]/g, '');
-                if (phone.length >= 10) {
-                    data.mobile = phone;
-                }
-            }
-            
-            // Extract WEBSITE
-            const websiteRegex = /((www\.|https?:\/\/)[^\s]+)/gi;
-            const websites = [...text.matchAll(websiteRegex)];
-            if (websites.length > 0) {
-                data.website = websites[0][0];
-                if (data.website.includes('.')) {
-                    const domain = data.website.split('/')[2] || data.website.split('/')[0];
-                    const companyName = domain.split('.')[0];
-                    if (companyName.length > 2 && !data.company) {
-                        data.company = companyName.charAt(0).toUpperCase() + companyName.slice(1);
-                    }
-                }
-            }
-            
-            // Extract NAME and DESIGNATION
-            for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                const line = lines[i];
-                
-                if (line.includes('@') || line.includes('http') || /\d{8,}/.test(line)) {
-                    continue;
-                }
-                
-                const words = line.split(/\s+/);
-                if (words.length >= 2 && words.length <= 4) {
-                    const allStartWithCapital = words.every(w => /^[A-Z]/.test(w));
-                    const hasCommonPrefix = /^(Mr|Ms|Mrs|Dr|Prof)\.?\s/i.test(line);
-                    
-                    if (allStartWithCapital || hasCommonPrefix) {
-                        if (!data.name) {
-                            data.name = line;
-                            continue;
-                        }
-                    }
-                }
-                
-                const designationPatterns = [
-                    /(Sr\.?\s*|Jr\.?\s*)?(Manager|Director|CEO|CTO|CFO|President|VP|Head|Lead|Engineer|Developer|Analyst|Consultant)/i,
-                    /(Senior|Junior)\s+(.*)/i
-                ];
-                
-                for (const pattern of designationPatterns) {
-                    const match = line.match(pattern);
-                    if (match && !data.designation) {
-                        data.designation = line;
-                        break;
-                    }
-                }
-            }
-            
-            // Extract COMPANY
-            for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                const line = lines[i];
-                
-                const companyIndicators = [
-                    /(Inc|Corp|Corporation|LLC|Ltd|Limited|Co\.?|Company|Technologies|Solutions|Systems|Group|International|Global)/i,
-                    /^[A-Z\s&]+$/
-                ];
-                
-                for (const indicator of companyIndicators) {
-                    if (indicator.test(line) && line.length > 3 && !data.company) {
-                        data.company = line;
-                        break;
-                    }
-                }
-            }
-            
-            // Fallback for COMPANY
-            if (!data.company) {
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (line.length > 3 && 
-                        !line.includes('@') && 
-                        !line.includes('http') && 
-                        !/\d{8,}/.test(line) &&
-                        line !== data.name &&
-                        line !== data.designation) {
-                        data.company = line;
-                        break;
-                    }
-                }
-            }
-            
-            // Clean data
-            Object.keys(data).forEach(key => {
-                if (data[key]) {
-                    data[key] = data[key].trim();
-                    data[key] = data[key].replace(/[.,;:\s]+$/, '');
-                }
-            });
-            
-            // Clean name from designation words
-            if (data.name) {
-                const designationWords = ['manager', 'director', 'ceo', 'cto', 'cfo', 'president', 'vp', 'head', 'lead'];
-                const nameWords = data.name.split(' ');
-                const filteredName = nameWords.filter(word => 
-                    !designationWords.includes(word.toLowerCase().replace(/[.,]/g, ''))
-                );
-                if (filteredName.length >= 2) {
-                    data.name = filteredName.join(' ');
-                }
-            }
-            
-            return data;
-        }
-        
-        function displayExtractionResults(data) {
-            let html = '<div class="extraction-row">';
-            for (const [key, value] of Object.entries(data)) {
-                const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                html += `<strong>${label}:</strong> ${value || '<span style="color:red">Not found</span>'}<br>`;
-            }
-            html += '</div>';
-            return html;
-        }
-        
-        function showCorrectionInterface(data) {
-            const container = document.getElementById('correctionFields');
-            container.innerHTML = '';
-            
-            const fields = [
-                { key: 'name', label: 'Contact Person', example: 'John Smith' },
-                { key: 'company', label: 'Company Name', example: 'ABC Technologies Inc' },
-                { key: 'mobile', label: 'Mobile Number', example: '+91 9876543210' },
-                { key: 'email', label: 'Email ID', example: 'john@example.com' },
-                { key: 'designation', label: 'Designation', example: 'Senior Manager' },
-                { key: 'website', label: 'Website', example: 'www.example.com' },
-                { key: 'location', label: 'Location', example: 'Mumbai, India' }
-            ];
-            
-            fields.forEach(field => {
-                const div = document.createElement('div');
-                div.className = 'mb-2';
-                div.innerHTML = `
-                    <label class="form-label">${field.label}:</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="correct_${field.key}" 
-                               value="${data[field.key] || ''}" placeholder="${field.example}">
-                        <button class="btn btn-outline-secondary correct-btn" type="button" 
-                                onclick="suggestFromText('${field.key}')">Suggest</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-            
-            document.getElementById('correctionSection').style.display = 'block';
-        }
-        
-        function suggestFromText(field) {
-            const suggestions = extractSuggestionsFromText(rawOcrText, field);
-            if (suggestions.length > 0) {
-                const input = document.getElementById(`correct_${field}`);
-                input.value = suggestions[0];
-                input.focus();
-            }
-        }
-        
-        function extractSuggestionsFromText(text, field) {
-            const lines = text.split('\n').map(l => l.trim());
-            const suggestions = [];
-            
-            switch(field) {
-                case 'name':
-                    lines.forEach(line => {
-                        const words = line.split(/\s+/);
-                        if (words.length >= 2 && words.length <= 3 && 
-                            words.every(w => /^[A-Z]/.test(w))) {
-                            suggestions.push(line);
-                        }
-                    });
-                    break;
-                    
-                case 'mobile':
-                    const phoneRegex = /(\+?(\d[\d\s-()]{7,}\d))/g;
-                    const phones = [...text.matchAll(phoneRegex)];
-                    phones.forEach(p => suggestions.push(p[0].replace(/\s+/g, ' ')));
-                    break;
-                    
-                case 'company':
-                    lines.forEach(line => {
-                        if (line.length > 3 && 
-                            (line.includes('Inc') || line.includes('Corp') || 
-                             line.includes('Ltd') || line.includes('Co.') ||
-                             /^[A-Z\s&]+$/.test(line))) {
-                            suggestions.push(line);
-                        }
-                    });
-                    break;
-            }
-            
-            return suggestions.slice(0, 3);
-        }
-        
-        function saveCorrectedData() {
-            const correctedData = {};
-            const fields = ['name', 'company', 'mobile', 'email', 'designation', 'website', 'location'];
-            
-            fields.forEach(field => {
-                const value = document.getElementById(`correct_${field}`).value.trim();
-                correctedData[field] = value || 'N/A';
-            });
-            
-            const tableBody = document.getElementById('tableBody');
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td data-label="Company">${correctedData.company}</td>
-                <td data-label="Contact">${correctedData.name}</td>
-                <td data-label="Mobile">${correctedData.mobile}</td>
-                <td data-label="Email">${correctedData.email}</td>
-                <td data-label="Designation">${correctedData.designation}</td>
-                <td data-label="Website">${correctedData.website}</td>
-                <td data-label="Location">${correctedData.location}</td>
-            `;
-            tableBody.appendChild(newRow);
-            
-            saveData();
-            document.getElementById('correctionSection').style.display = 'none';
-            updateRowCount();
-            showToast('Data saved successfully!', 'success');
-        }
-        
-        function resetInputs(usingCamera) {
-            if (usingCamera) {
-                frontCameraImage = null;
-                backCameraImage = null;
-                document.getElementById('frontCameraPreview').style.display = 'none';
-                document.getElementById('backCameraPreview').style.display = 'none';
-            } else {
-                document.getElementById('frontImage').value = '';
-                document.getElementById('backImage').value = '';
-                document.getElementById('frontPreview').style.display = 'none';
-                document.getElementById('backPreview').style.display = 'none';
-            }
-        }
-        
-        // Data Management
-        function getTableData() {
-            const data = [];
-            const rows = document.querySelectorAll('#tableBody tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                data.push({
-                    company: cells[0].textContent,
-                    name: cells[1].textContent,
-                    mobile: cells[2].textContent,
-                    email: cells[3].textContent,
-                    designation: cells[4].textContent,
-                    website: cells[5].textContent,
-                    location: cells[6].textContent
-                });
-            });
-            return data;
-        }
-        
-        function renderTable(data) {
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            data.forEach(card => {
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td data-label="Company">${card.company || 'N/A'}</td>
-                    <td data-label="Contact">${card.name || 'N/A'}</td>
-                    <td data-label="Mobile">${card.mobile || 'N/A'}</td>
-                    <td data-label="Email">${card.email || 'N/A'}</td>
-                    <td data-label="Designation">${card.designation || 'N/A'}</td>
-                    <td data-label="Website">${card.website || 'N/A'}</td>
-                    <td data-label="Location">${card.location || 'N/A'}</td>
-                `;
-                tableBody.appendChild(newRow);
-            });
-            updateRowCount();
-        }
-        
-        function updateRowCount() {
-            const rowCount = document.getElementById('tableBody').children.length;
-            document.getElementById('rowCount').textContent = `${rowCount} card${rowCount !== 1 ? 's' : ''}`;
-        }
-        
-        function saveData() {
-            const data = getTableData();
-            if (data.length === 0) {
-                showToast('No data to save', 'warning');
-                return;
-            }
-            
-            // Save to localStorage
-            localStorage.setItem('businessCardsData', JSON.stringify(data));
-            localStorage.setItem('businessCardsTimestamp', Date.now());
-            
-            // Also save device-specific copy
-            localStorage.setItem(`businessCards_${deviceId}`, JSON.stringify(data));
-            
-            showToast(`Saved ${data.length} cards`, 'success');
-        }
-        
-        function loadData() {
-            try {
-                // Try to load device-specific data first
-                let data = localStorage.getItem(`businessCards_${deviceId}`);
-                
-                // Fallback to general data
-                if (!data) {
-                    data = localStorage.getItem('businessCardsData');
-                }
-                
-                if (data) {
-                    const cards = JSON.parse(data);
-                    if (cards.length > 0) {
-                        renderTable(cards);
-                        showToast(`Loaded ${cards.length} cards`, 'success');
-                    } else {
-                        showToast('No saved data found', 'info');
-                    }
-                } else {
-                    showToast('No saved data found', 'info');
-                }
-            } catch (error) {
-                showToast('Error loading data', 'error');
-            }
-        }
-        
-        function exportToExcel() {
-            const table = document.getElementById('dataTable');
-            if (table.rows.length <= 1) {
-                showToast('No data to export', 'warning');
-                return;
-            }
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `business_cards_${new Date().toISOString().slice(0,10)}.xlsx`);
-            showToast('Excel file downloaded', 'success');
-        }
-        
-        function clearData() {
-            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                document.getElementById('tableBody').innerHTML = '';
-                document.getElementById('previewSection').style.display = 'none';
-                document.getElementById('correctionSection').style.display = 'none';
-                
-                // Clear localStorage
-                localStorage.removeItem('businessCardsData');
-                localStorage.removeItem(`businessCards_${deviceId}`);
-                
-                updateRowCount();
-                showToast('All data cleared', 'success');
-            }
-        }
-        
-        // QR Code Sync Functions
-        function showSyncModal() {
-            const modal = new bootstrap.Modal(document.getElementById('syncModal'));
-            modal.show();
-            generateQRCode();
-        }
-        
-        function showQRCode() {
-            const data = getTableData();
-            if (data.length === 0) {
-                showToast('No data to share', 'warning');
-                return;
-            }
-            
-            const syncData = {
-                deviceId: deviceId,
-                cards: data,
-                timestamp: Date.now(),
-                version: '1.0'
-            };
-            
-            const qrData = JSON.stringify(syncData);
-            QRCode.toCanvas(document.getElementById('qrCodeCanvas'), qrData, {
-                width: 250,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function(error) {
-                if (error) console.error(error);
-            });
-            
-            showSyncModal();
-        }
-        
-        function generateQRCode() {
-            const data = getTableData();
-            const syncData = {
-                deviceId: deviceId,
-                cards: data,
-                timestamp: Date.now(),
-                version: '1.0'
-            };
-            
-            const qrData = JSON.stringify(syncData);
-            QRCode.toCanvas(document.getElementById('qrCodeCanvas'), qrData, {
-                width: 250,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function(error) {
-                if (error) console.error(error);
-            });
-        }
-        
-        function exportToQR() {
-            const data = getTableData();
-            if (data.length === 0) {
-                showToast('No data to export', 'warning');
-                return;
-            }
-            
-            const syncData = {
-                deviceId: deviceId,
-                cards: data,
-                timestamp: Date.now(),
-                version: '1.0'
-            };
-            
-            const qrData = JSON.stringify(syncData);
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(qrData).then(() => {
-                showToast('QR data copied to clipboard!', 'success');
-            }).catch(err => {
-                // Fallback
-                const textArea = document.createElement('textarea');
-                textArea.value = qrData;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showToast('QR data copied!', 'success');
-            });
-        }
-        
-        function importFromQR() {
-            const qrData = document.getElementById('qrDataInput').value.trim();
-            if (!qrData) {
-                showToast('Please enter QR code data', 'warning');
-                return;
-            }
-            
-            try {
-                const importedData = JSON.parse(qrData);
-                
-                if (!importedData.cards || !Array.isArray(importedData.cards)) {
-                    throw new Error('Invalid data format');
-                }
-                
-                // Merge with existing data
-                const currentData = getTableData();
-                const mergedData = [...currentData];
-                
-                importedData.cards.forEach(newCard => {
-                    // Check if card already exists (by email)
-                    const exists = mergedData.some(card => 
-                        card.email !== 'N/A' && card.email === newCard.email
-                    );
-                    
-                    if (!exists) {
-                        mergedData.push(newCard);
-                    }
-                });
-                
-                renderTable(mergedData);
-                saveData();
-                
-                const modal = bootstrap.Modal.getInstance(document.getElementById('syncModal'));
-                if (modal) modal.hide();
-                
-                showToast(`Imported ${importedData.cards.length} cards from ${importedData.deviceId}`, 'success');
-                
-            } catch (error) {
-                showToast('Invalid QR code data: ' + error.message, 'error');
-            }
-        }
-        
-        function copyDeviceId() {
-            navigator.clipboard.writeText(deviceId).then(() => {
-                showToast('Device ID copied!', 'success');
-            }).catch(err => {
-                // Fallback
-                const textArea = document.createElement('textarea');
-                textArea.value = deviceId;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showToast('Device ID copied!', 'success');
-            });
-        }
-        
-        // Event Listeners
-        function setupEventListeners() {
-            // Search
-            document.getElementById('searchInput').addEventListener('input', function() {
-                const filter = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#tableBody tr');
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(filter) ? '' : 'none';
-                });
-            });
-            
-            // Close camera when switching tabs
-            document.getElementById('upload-tab').addEventListener('click', function() {
-                stopCamera();
-            });
-            
-            // Auto-save
-            window.addEventListener('beforeunload', function() {
-                if (document.getElementById('tableBody').children.length > 0) {
-                    saveData();
-                }
-            });
-            
-            // Auto-save every minute
-            setInterval(() => {
-                if (document.getElementById('tableBody').children.length > 0) {
-                    saveData();
-                }
-            }, 60000);
-        }
-        
-        // Close camera when page hidden
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                stopCamera();
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
