@@ -6,9 +6,11 @@
     <title>Business Card Scanner</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 </head>
 <body>
@@ -215,14 +217,67 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Saved Cards Table Section -->
+            <div class="table-section">
+                <h2><i class="fas fa-table"></i> Saved Business Cards</h2>
+                <div class="table-controls">
+                    <div class="table-stats">
+                        <span id="cardCount">0 cards saved</span>
+                        <button class="btn-refresh" onclick="refreshCardTable()">
+                            <i class="fas fa-redo"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="table-search">
+                        <input type="text" id="tableSearch" placeholder="Search cards...">
+                        <button class="btn-search" onclick="searchCards()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="cardsTable" class="display">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Company</th>
+                                <th>Contact Person</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Website</th>
+                                <th>Location</th>
+                                <th>Job Title</th>
+                                <th>Date Saved</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cardsTableBody">
+                            <!-- Cards will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-actions">
+                    <button class="btn-export-csv" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv"></i> Export to CSV
+                    </button>
+                    <button class="btn-export-json" onclick="exportToJSON()">
+                        <i class="fas fa-file-code"></i> Export to JSON
+                    </button>
+                    <button class="btn-delete-all" onclick="deleteAllCards()">
+                        <i class="fas fa-trash-alt"></i> Delete All Cards
+                    </button>
+                </div>
+            </div>
         </main>
 
         <footer>
-            <p>Business Card Scanner &copy; 2024 | AI-Powered OCR | All cards are synced across your devices</p>
+            <p>Business Card Scanner &copy; 2024 | AI-Powered OCR | Total Cards: <span id="totalCards">0</span></p>
         </footer>
     </div>
 
-    <!-- Camera Modal with Back Camera Support -->
+    <!-- Camera Modal -->
     <div id="cameraModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -257,6 +312,27 @@
                         <i class="fas fa-bolt"></i> Flash Off
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Details Modal -->
+    <div id="cardDetailsModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-id-card"></i> Card Details</h3>
+                <span class="close" onclick="closeCardDetails()">&times;</span>
+            </div>
+            <div class="modal-body" id="cardDetailsContent">
+                <!-- Card details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-edit" onclick="editSelectedCard()">
+                    <i class="fas fa-edit"></i> Edit Card
+                </button>
+                <button class="btn-close-modal" onclick="closeCardDetails()">
+                    <i class="fas fa-times"></i> Close
+                </button>
             </div>
         </div>
     </div>
