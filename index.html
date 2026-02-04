@@ -2,610 +2,1053 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Business Card Scanner Pro</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardScan - Universal Business Card Scanner</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/2097/2097026.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.2rem;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .logo span {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+        }
+        
+        .sync-status i {
+            font-size: 1rem;
+        }
+        
+        .sync-status.synced {
+            background: rgba(76, 201, 240, 0.3);
+        }
+        
+        .sync-status.syncing {
+            background: rgba(247, 37, 133, 0.3);
+        }
+        
+        .search-container {
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            padding-left: 50px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            box-shadow: var(--shadow);
+            background-color: white;
+            transition: var(--transition);
+        }
+        
+        .search-box:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .section {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: var(--secondary);
+        }
+        
+        .scan-options {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .scan-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 18px;
+            border-radius: var(--border-radius);
+            background-color: var(--light-gray);
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .scan-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+        
+        .scan-btn i {
+            font-size: 1.8rem;
+        }
+        
+        .card-preview {
+            text-align: center;
+            padding: 30px;
+            border: 2px dashed var(--light-gray);
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .card-preview i {
+            font-size: 4rem;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--dark);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #dde1e7;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e11570;
+        }
+        
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .card-item {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--primary);
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .card-company {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .card-date {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .card-person {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .card-title {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        
+        .card-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .card-contact div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .card-contact i {
+            color: var(--primary);
+            width: 20px;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .card-btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .card-btn.view {
+            background-color: var(--light-gray);
+            color: var(--dark);
+        }
+        
+        .card-btn.edit {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .card-btn.delete {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        
+        .no-cards {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .no-cards i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .feature-item {
+            background-color: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        .feature-item:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-5px);
+        }
+        
+        .feature-item:hover i {
+            color: white;
+        }
+        
+        .feature-item i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .sync-info {
+            background-color: #e7f7ff;
+            border-left: 5px solid var(--success);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-top: 30px;
+        }
+        
+        .sync-info a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .sync-info a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .search-clear {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .scan-options {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="animated-bg">
-        <div class="shape shape1"></div>
-        <div class="shape shape2"></div>
-        <div class="shape shape3"></div>
-        <div class="shape shape4"></div>
-        <div class="shape shape5"></div>
-        <div class="floating-card"></div>
-        <div class="floating-card card2"></div>
-        <div class="floating-card card3"></div>
+    <!-- Loading overlay -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text">Syncing your data...</p>
     </div>
-
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-        <div class="loader">
-            <div class="loader-circle"></div>
-            <div class="loader-text">Initializing Card Scanner</div>
-        </div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Header -->
-        <header class="glass-header">
+    
+    <header>
+        <div class="container">
             <div class="header-content">
-                <div class="logo" onclick="window.location.reload()">
-                    <i class="fas fa-id-card-alt"></i>
-                    <div class="logo-text">
-                        <h1>CardScan<span class="pro-badge">PRO</span></h1>
-                        <p class="logo-subtitle">Universal Business Card Scanner</p>
+                <div class="logo">
+                    <i class="fas fa-id-card"></i>
+                    <div>
+                        <h1>CardScan</h1>
+                        <span>Universal Business Card Scanner</span>
+                    </div>
+                </div>
+                <div class="sync-status" id="syncStatus">
+                    <i class="fas fa-cloud"></i>
+                    <span>Syncing...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" class="search-box" placeholder="Search cards by name, company, title, or email...">
+            <button class="search-clear" id="clearSearch" title="Clear search">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="main-content">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Scan Card Section -->
+                <div class="section">
+                    <h2 class="section-title"><i class="fas fa-camera"></i> Scan Card</h2>
+                    <div class="scan-options">
+                        <button class="scan-btn">
+                            <i class="fas fa-camera"></i>
+                            <span>Camera</span>
+                        </button>
+                        <button class="scan-btn">
+                            <i class="fas fa-images"></i>
+                            <span>Gallery</span>
+                        </button>
+                        <button class="scan-btn">
+                            <i class="fas fa-bolt"></i>
+                            <span>Quick Scan</span>
+                        </button>
                     </div>
                 </div>
                 
-                <div class="header-right">
-                    <div class="header-stats">
-                        <div class="stat">
-                            <div class="stat-icon">
-                                <i class="fas fa-cloud"></i>
-                                <div class="pulse-dot" id="cloudStatus"></div>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="cardCount">0</span>
-                                <span class="stat-label">Cards</span>
-                            </div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-icon">
-                                <i class="fas fa-sync-alt"></i>
-                                <div class="spin-ring"></div>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="syncStatus">Live</span>
-                                <span class="stat-label">Sync</span>
-                            </div>
-                        </div>
+                <!-- Card Details Preview -->
+                <div class="section">
+                    <h2 class="section-title"><i class="fas fa-eye"></i> Card Preview</h2>
+                    <div class="card-preview" id="cardPreview">
+                        <i class="fas fa-id-card"></i>
+                        <p>No image selected</p>
+                        <p>Upload or capture image to preview</p>
                     </div>
                     
-                    <button class="menu-toggle" onclick="toggleMenu()">
-                        <i class="fas fa-bars"></i>
-                    </button>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-secondary">
+                            <i class="fas fa-broom"></i> Clear
+                        </button>
+                        <button class="action-btn btn-secondary">
+                            <i class="fas fa-qrcode"></i> QR Code
+                        </button>
+                        <button class="action-btn btn-primary" id="aiScanBtn">
+                            <i class="fas fa-robot"></i> AI Scan
+                        </button>
+                        <button class="action-btn btn-warning">
+                            <i class="fas fa-save"></i> Save Card
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- AI Powered Features -->
+                <div class="section">
+                    <h2 class="section-title"><i class="fas fa-brain"></i> AI-Powered Features</h2>
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <i class="fas fa-magic"></i>
+                            <h3>Auto Extract</h3>
+                            <p>Extract details automatically</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-save"></i>
+                            <h3>Saved Cards</h3>
+                            <p>All your cards in one place</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-sync-alt"></i>
+                            <h3>Cloud Sync</h3>
+                            <p>Access from any device</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-search"></i>
+                            <h3>Smart Search</h3>
+                            <p>Find cards instantly</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Mobile Menu -->
-            <div class="mobile-menu" id="mobileMenu">
-                <div class="menu-items">
-                    <button class="menu-item" onclick="openCamera('back')">
-                        <i class="fas fa-camera"></i>
-                        <span>Scan Card</span>
-                    </button>
-                    <button class="menu-item" onclick="showAllCards()">
-                        <i class="fas fa-th-large"></i>
-                        <span>View Cards</span>
-                    </button>
-                    <button class="menu-item" onclick="exportAllCards()">
-                        <i class="fas fa-share"></i>
-                        <span>Export All</span>
-                    </button>
-                    <button class="menu-item" onclick="clearAllCards()">
-                        <i class="fas fa-trash"></i>
-                        <span>Clear All</span>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Left Panel - Scanner -->
-            <section class="panel scanner-panel">
-                <div class="panel-header">
-                    <h2><i class="fas fa-camera"></i> Scan Card</h2>
-                    <div class="scan-indicator">
-                        <div class="scan-pulse"></div>
-                        <span>Ready</span>
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Saved Cards Section -->
+                <div class="section">
+                    <h2 class="section-title"><i class="fas fa-address-book"></i> Saved Cards</h2>
+                    <div class="cards-container" id="cardsContainer">
+                        <!-- Cards will be dynamically added here -->
                     </div>
                 </div>
                 
-                <div class="scanner-container">
-                    <div class="scanner-card">
-                        <div class="scanner-options">
-                            <button class="scanner-option active" onclick="openCamera('back')" id="cameraBtn">
-                                <div class="option-icon">
-                                    <i class="fas fa-camera"></i>
-                                    <div class="option-ring"></div>
-                                </div>
-                                <span class="option-text">Camera</span>
-                            </button>
-                            
-                            <button class="scanner-option" onclick="openFilePicker()">
-                                <div class="option-icon">
-                                    <i class="fas fa-image"></i>
-                                </div>
-                                <span class="option-text">Gallery</span>
-                                <input type="file" id="cardImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-                            </button>
-                            
-                            <button class="scanner-option" onclick="startQuickScan()">
-                                <div class="option-icon">
-                                    <i class="fas fa-bolt"></i>
-                                </div>
-                                <span class="option-text">Quick Scan</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Image Preview -->
-                        <div class="preview-container">
-                            <div class="preview-frame" id="previewFrame">
-                                <div class="preview-overlay" id="previewOverlay">
-                                    <i class="fas fa-id-card"></i>
-                                    <p>Card Preview</p>
-                                    <small>Upload or capture image</small>
-                                </div>
-                                <img id="previewImage" alt="Card Preview">
-                            </div>
-                            
-                            <div class="preview-controls">
-                                <span id="fileName">No image selected</span>
-                                <button class="btn-scan" onclick="startOCRScan()" id="scanBtn">
-                                    <i class="fas fa-robot"></i>
-                                    <span>AI Scan</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- OCR Progress -->
-                        <div class="ocr-progress" id="ocrProgress" style="display: none;">
-                            <div class="progress-header">
-                                <i class="fas fa-brain"></i>
-                                <span>AI Processing</span>
-                            </div>
-                            <div class="progress-track">
-                                <div class="progress-fill" id="progressFill"></div>
-                            </div>
-                            <span class="progress-text" id="progressText">0%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Tips -->
-                <div class="tips-container">
-                    <div class="tips-header">
-                        <i class="fas fa-lightbulb"></i>
-                        <span>Tips for best results:</span>
-                    </div>
-                    <div class="tips-list">
-                        <div class="tip">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Use good lighting</span>
-                        </div>
-                        <div class="tip">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Keep card flat</span>
-                        </div>
-                        <div class="tip">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Focus on text</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Center Panel - Form -->
-            <section class="panel form-panel">
-                <div class="panel-header">
-                    <h2><i class="fas fa-edit"></i> Card Details</h2>
-                    <div class="ai-badge">
-                        <i class="fas fa-magic"></i>
-                        <span>AI-Powered</span>
-                    </div>
-                </div>
-                
-                <!-- OCR Results -->
-                <div class="ocr-results-card" id="ocrResultsSection" style="display: none;">
-                    <div class="results-header">
-                        <h3><i class="fas fa-robot"></i> Extracted Data</h3>
-                        <div class="results-controls">
-                            <button class="btn-apply-all" onclick="applyOCRResults()">
-                                <i class="fas fa-check-double"></i>
-                                <span>Apply All</span>
-                            </button>
-                            <button class="btn-clear-results" onclick="clearOCRResults()">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="results-grid" id="ocrResults">
-                        <!-- Results will appear here -->
-                    </div>
-                </div>
-                
-                <!-- Form -->
-                <div class="form-card">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-building"></i>
-                                <input type="text" id="companyName" placeholder="Company Name" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-user-tie"></i>
-                                <input type="text" id="contactPerson" placeholder="Contact Person" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-id-badge"></i>
-                                <input type="text" id="jobTitle" placeholder="Job Title" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="email" placeholder="Email Address" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-phone"></i>
-                                <input type="tel" id="phone" placeholder="Phone Number" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <div class="input-container">
-                                <i class="fas fa-globe"></i>
-                                <input type="text" id="website" placeholder="Website" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group full-width">
-                            <div class="input-container">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <input type="text" id="location" placeholder="Location/Address" autocomplete="off">
-                                <div class="input-line"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="form-actions">
-                        <button class="btn-save" onclick="saveCard()" id="saveBtn">
-                            <i class="fas fa-save"></i>
-                            <span>Save Card</span>
-                            <div class="btn-shine"></div>
-                        </button>
-                        
-                        <div class="action-group">
-                            <button class="btn-action" onclick="clearForm()">
-                                <i class="fas fa-broom"></i>
-                                <span>Clear</span>
-                            </button>
-                            <button class="btn-action" onclick="generateQR()">
-                                <i class="fas fa-qrcode"></i>
-                                <span>QR Code</span>
-                            </button>
-                            <button class="btn-action" onclick="quickFill()">
-                                <i class="fas fa-bolt"></i>
-                                <span>Quick Fill</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sync Status -->
-                <div class="sync-status-card">
-                    <div class="sync-header">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Cloud Sync Status</span>
-                    </div>
-                    <div class="sync-info">
-                        <div class="sync-item">
-                            <i class="fas fa-check-circle"></i>
-                            <span>All devices sync automatically</span>
-                        </div>
-                        <div class="sync-item">
-                            <i class="fas fa-link"></i>
-                            <span>Access from any device via:</span>
-                        </div>
-                        <div class="sync-url">
-                            <code>https://ansh200229.github.io/Ansh_Business-card-scanner/</code>
-                            <button class="btn-copy-url" onclick="copyURL()">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Right Panel - Cards -->
-            <section class="panel cards-panel">
-                <div class="panel-header">
-                    <h2><i class="fas fa-th-large"></i> Saved Cards</h2>
-                    <div class="view-controls">
-                        <button class="view-btn active" onclick="setViewMode('grid')">
-                            <i class="fas fa-th-large"></i>
-                        </button>
-                        <button class="view-btn" onclick="setViewMode('list')">
-                            <i class="fas fa-list"></i>
-                        </button>
-                        <button class="view-btn" onclick="refreshCards()">
-                            <i class="fas fa-redo"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Cards Container -->
-                <div class="cards-container">
-                    <!-- Cards Grid View -->
-                    <div class="cards-grid" id="cardsGrid">
-                        <!-- Cards will be loaded here -->
-                    </div>
-                    
-                    <!-- Cards List View -->
-                    <div class="cards-list" id="cardsList" style="display: none;">
-                        <div class="list-header">
-                            <div class="list-column">Company</div>
-                            <div class="list-column">Contact</div>
-                            <div class="list-column">Phone</div>
-                            <div class="list-column">Actions</div>
-                        </div>
-                        <div class="list-body" id="cardsListBody">
-                            <!-- List items will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Empty State -->
-                    <div class="empty-state" id="emptyState">
-                        <div class="empty-icon">
-                            <i class="fas fa-id-card"></i>
-                            <div class="empty-ripple"></div>
-                        </div>
-                        <h3>No Cards Yet</h3>
-                        <p>Scan your first business card to get started</p>
-                        <button class="btn-empty" onclick="openCamera('back')">
-                            <i class="fas fa-camera"></i>
-                            <span>Scan First Card</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Statistics -->
-                <div class="stats-card">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-layer-group"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-number" id="totalCards">0</span>
-                                <span class="stat-label">Total Cards</span>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-sync"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-number" id="lastSync">Just now</span>
-                                <span class="stat-label">Last Sync</span>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-number" id="sharedCount">0</span>
-                                <span class="stat-label">Shared</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Bottom Navigation (Mobile) -->
-        <nav class="bottom-nav">
-            <button class="nav-btn active" onclick="showPanel('scanner')">
-                <i class="fas fa-camera"></i>
-                <span>Scan</span>
-            </button>
-            <button class="nav-btn" onclick="showPanel('form')">
-                <i class="fas fa-edit"></i>
-                <span>Details</span>
-            </button>
-            <button class="nav-btn" onclick="showPanel('cards')">
-                <i class="fas fa-th-large"></i>
-                <span>Cards</span>
-            </button>
-            <button class="nav-btn" onclick="showSettings()">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </button>
-        </nav>
-
-        <!-- Quick Actions Bar -->
-        <div class="quick-actions">
-            <button class="quick-action" onclick="openCamera('back')">
-                <i class="fas fa-camera"></i>
-            </button>
-            <button class="quick-action" onclick="saveCard()">
-                <i class="fas fa-save"></i>
-            </button>
-            <button class="quick-action" onclick="refreshCards()">
-                <i class="fas fa-redo"></i>
-            </button>
-            <button class="quick-action" onclick="exportAllCards()">
-                <i class="fas fa-share"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Camera Modal -->
-    <div id="cameraModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-camera"></i> Card Scanner</h3>
-                <button class="modal-close" onclick="closeCamera()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="camera-view">
-                    <video id="cameraFeed" autoplay playsinline></video>
-                    <div class="scanner-overlay">
-                        <div class="scanner-frame">
-                            <div class="corner tl"></div>
-                            <div class="corner tr"></div>
-                            <div class="corner bl"></div>
-                            <div class="corner br"></div>
-                        </div>
-                        <div class="scan-line"></div>
-                        <div class="scan-instruction">
-                            <i class="fas fa-hand-point-up"></i>
-                            <p>Position card within frame</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="camera-controls">
-                    <button class="btn-capture" onclick="captureImage()">
-                        <i class="fas fa-camera"></i>
-                        <span>Capture</span>
-                    </button>
-                    <button class="btn-switch" onclick="switchCamera()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="btn-flash" onclick="toggleFlash()" id="flashBtn">
-                        <i class="fas fa-bolt"></i>
-                    </button>
+                <!-- Cloud Sync Info -->
+                <div class="sync-info">
+                    <h3><i class="fas fa-cloud"></i> Cloud Sync Status</h3>
+                    <p>All devices sync automatically. Access your cards from any device via:</p>
+                    <p><a href="https://ansh200229.github.io/Ansh_Business-card-scanner/" target="_blank">https://ansh200229.github.io/Ansh_Business-card-scanner/</a></p>
+                    <p id="lastSyncInfo">Last sync: <span id="lastSyncTime">Just now</span></p>
                 </div>
             </div>
         </div>
+        
+        <footer>
+            <p>CardScan &copy; 2026 | Universal Business Card Scanner | All rights reserved</p>
+        </footer>
     </div>
 
-    <!-- Card Details Modal -->
-    <div id="cardDetailsModal" class="modal">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h3><i class="fas fa-id-card"></i> Card Details</h3>
-                <button class="modal-close" onclick="closeCardModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="cardDetailsContent">
-                <!-- Details will be loaded here -->
-            </div>
-        </div>
-    </div>
+    <script>
+        // Sample card data (simulating data from localStorage/cloud)
+        let cards = [
+            {
+                id: 1,
+                company: "TechCorp Solutions",
+                date: "2/4/2026",
+                name: "Alex Johnson",
+                title: "CEO",
+                email: "alex@techcorp.com",
+                phone: "+1 (555) 123-4567",
+                website: "techcorp.com",
+                location: "San Francisco, CA"
+            },
+            {
+                id: 2,
+                company: "Innovate Labs",
+                date: "2/4/2026",
+                name: "Sarah Williams",
+                title: "CTO",
+                email: "sarah@innovatelabs.com",
+                phone: "+1 (555) 987-6543",
+                website: "innovatelabs.com",
+                location: "New York, NY"
+            },
+            {
+                id: 3,
+                company: "Faulhaber",
+                date: "2/4/2026",
+                name: "Sushrut Patil",
+                title: "Engineering Manager",
+                email: "sushrut@faulhaber.com",
+                phone: "+1 (555) 456-7890",
+                website: "faulhaber.com",
+                location: "Austin, TX"
+            },
+            {
+                id: 4,
+                company: "DataStream Inc.",
+                date: "1/28/2026",
+                name: "Michael Chen",
+                title: "Data Scientist",
+                email: "michael@datastream.com",
+                phone: "+1 (555) 234-5678",
+                website: "datastream.com",
+                location: "Seattle, WA"
+            },
+            {
+                id: 5,
+                company: "GreenTech Solutions",
+                date: "1/25/2026",
+                name: "Emma Wilson",
+                title: "Sustainability Director",
+                email: "emma@greentech.com",
+                phone: "+1 (555) 345-6789",
+                website: "greentech-solutions.com",
+                location: "Portland, OR"
+            }
+        ];
 
-    <!-- QR Code Modal -->
-    <div id="qrModal" class="modal">
-        <div class="modal-content small">
-            <div class="modal-header">
-                <h3><i class="fas fa-qrcode"></i> Share Card</h3>
-                <button class="modal-close" onclick="closeQRModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="qr-container" id="qrContainer"></div>
-                <div class="qr-actions">
-                    <button class="btn-download" onclick="downloadQR()">
-                        <i class="fas fa-download"></i>
-                        <span>Download</span>
+        // DOM Elements
+        const cardsContainer = document.getElementById('cardsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const syncStatus = document.getElementById('syncStatus');
+        const lastSyncTime = document.getElementById('lastSyncTime');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const aiScanBtn = document.getElementById('aiScanBtn');
+        const cardPreview = document.getElementById('cardPreview');
+
+        // Initialize the app
+        function initApp() {
+            // Load cards from localStorage if available
+            const savedCards = localStorage.getItem('cardscan_cards');
+            if (savedCards) {
+                try {
+                    const parsedCards = JSON.parse(savedCards);
+                    // Only replace if we have cards in storage
+                    if (parsedCards && parsedCards.length > 0) {
+                        cards = parsedCards;
+                    }
+                } catch (e) {
+                    console.error('Error parsing saved cards:', e);
+                }
+            }
+            
+            // Load last sync time
+            const lastSync = localStorage.getItem('cardscan_last_sync');
+            if (lastSync) {
+                lastSyncTime.textContent = formatTime(new Date(lastSync));
+            }
+            
+            // Render all cards
+            renderCards(cards);
+            
+            // Simulate initial sync
+            simulateSync();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Render cards to the UI
+        function renderCards(cardsToRender) {
+            cardsContainer.innerHTML = '';
+            
+            if (cardsToRender.length === 0) {
+                const noCardsDiv = document.createElement('div');
+                noCardsDiv.className = 'no-results';
+                noCardsDiv.innerHTML = `
+                    <i class="fas fa-search"></i>
+                    <h3>No cards found</h3>
+                    <p>Try a different search term or add a new card</p>
+                `;
+                cardsContainer.appendChild(noCardsDiv);
+                return;
+            }
+            
+            cardsToRender.forEach(card => {
+                const cardElement = createCardElement(card);
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        // Create HTML for a card
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card-item';
+            cardDiv.dataset.id = card.id;
+            
+            cardDiv.innerHTML = `
+                <div class="card-header">
+                    <div class="card-company">${card.company}</div>
+                    <div class="card-date">${card.date}</div>
+                </div>
+                <div class="card-person">${card.name}</div>
+                <div class="card-title">${card.title}</div>
+                <div class="card-contact">
+                    <div><i class="fas fa-envelope"></i> ${card.email}</div>
+                    <div><i class="fas fa-phone"></i> ${card.phone}</div>
+                    <div><i class="fas fa-globe"></i> ${card.website}</div>
+                    <div><i class="fas fa-map-marker-alt"></i> ${card.location}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="card-btn view" onclick="viewCard(${card.id})">
+                        <i class="fas fa-eye"></i> View
                     </button>
-                    <button class="btn-share" onclick="shareCard()">
-                        <i class="fas fa-share-alt"></i>
-                        <span>Share</span>
+                    <button class="card-btn edit" onclick="editCard(${card.id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="card-btn delete" onclick="deleteCard(${card.id})">
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
+            `;
+            
+            return cardDiv;
+        }
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-cog"></i> Settings</h3>
-                <button class="modal-close" onclick="closeSettings()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-section">
-                    <h4><i class="fas fa-sync"></i> Sync Settings</h4>
-                    <div class="setting-item">
-                        <label>Auto Sync</label>
-                        <label class="switch">
-                            <input type="checkbox" id="autoSync" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>Sync Frequency</label>
-                        <select id="syncFrequency">
-                            <option value="30000">Every 30 seconds</option>
-                            <option value="60000">Every minute</option>
-                            <option value="300000">Every 5 minutes</option>
-                        </select>
-                    </div>
-                </div>
+        // Search functionality
+        function searchCards(query) {
+            if (!query.trim()) {
+                renderCards(cards);
+                clearSearch.style.display = 'none';
+                return;
+            }
+            
+            clearSearch.style.display = 'block';
+            
+            const searchTerm = query.toLowerCase();
+            const filteredCards = cards.filter(card => {
+                return card.name.toLowerCase().includes(searchTerm) ||
+                       card.company.toLowerCase().includes(searchTerm) ||
+                       card.title.toLowerCase().includes(searchTerm) ||
+                       card.email.toLowerCase().includes(searchTerm);
+            });
+            
+            renderCards(filteredCards);
+        }
+
+        // Format time for display
+        function formatTime(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) {
+                return 'Just now';
+            } else if (diffMins < 60) {
+                return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+            } else {
+                return date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+                });
+            }
+        }
+
+        // Simulate cloud sync (to fix mobile-laptop sync issue)
+        function simulateSync() {
+            // Show syncing status
+            syncStatus.className = 'sync-status syncing';
+            syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> <span>Syncing...</span>';
+            
+            // In a real app, this would be an API call to sync with cloud storage
+            setTimeout(() => {
+                // Save cards to localStorage (simulating cloud storage)
+                localStorage.setItem('cardscan_cards', JSON.stringify(cards));
                 
-                <div class="settings-section">
-                    <h4><i class="fas fa-eye"></i> Appearance</h4>
-                    <div class="setting-item">
-                        <label>Dark Mode</label>
-                        <label class="switch">
-                            <input type="checkbox" id="darkMode">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>View Mode</label>
-                        <select id="viewMode">
-                            <option value="grid">Grid View</option>
-                            <option value="list">List View</option>
-                        </select>
-                    </div>
-                </div>
+                // Update last sync time
+                const now = new Date();
+                localStorage.setItem('cardscan_last_sync', now.toISOString());
+                lastSyncTime.textContent = formatTime(now);
                 
-                <div class="settings-actions">
-                    <button class="btn-reset" onclick="resetSettings()">
-                        <i class="fas fa-redo"></i>
-                        <span>Reset Settings</span>
-                    </button>
-                    <button class="btn-clear-data" onclick="clearAllData()">
-                        <i class="fas fa-trash"></i>
-                        <span>Clear All Data</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+                // Update sync status
+                syncStatus.className = 'sync-status synced';
+                syncStatus.innerHTML = '<i class="fas fa-cloud"></i> <span>All devices synced</span>';
+                
+                console.log('Data synced to cloud storage');
+            }, 1500);
+        }
 
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
+        // Show loading overlay
+        function showLoading(message = 'Syncing your data...') {
+            loadingText.textContent = message;
+            loading.classList.add('show');
+        }
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="script.js"></script>
+        // Hide loading overlay
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        // Card actions
+        function viewCard(id) {
+            const card = cards.find(c => c.id === id);
+            if (card) {
+                cardPreview.innerHTML = `
+                    <div style="text-align: left; width: 100%;">
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">${card.company}</h3>
+                        <p><strong>${card.name}</strong></p>
+                        <p style="color: var(--secondary); margin-bottom: 20px;">${card.title}</p>
+                        <p><i class="fas fa-envelope"></i> ${card.email}</p>
+                        <p><i class="fas fa-phone"></i> ${card.phone}</p>
+                        <p><i class="fas fa-globe"></i> ${card.website}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> ${card.location}</p>
+                    </div>
+                `;
+                
+                // Scroll to preview
+                cardPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function editCard(id) {
+            alert(`Edit card with ID: ${id}\n\nIn a real application, this would open an edit form.`);
+            // In a real app, you would open a modal or form to edit the card
+        }
+
+        function deleteCard(id) {
+            if (confirm('Are you sure you want to delete this card?')) {
+                // Remove card from array
+                cards = cards.filter(c => c.id !== id);
+                
+                // Update UI
+                renderCards(cards);
+                
+                // Sync to cloud
+                simulateSync();
+                
+                // Show notification
+                alert('Card deleted successfully!');
+            }
+        }
+
+        // Simulate AI scan
+        function simulateAIScan() {
+            showLoading('AI is scanning your card...');
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                // Simulate extracted data
+                const mockCard = {
+                    company: "Neural Networks Inc.",
+                    name: "David Miller",
+                    title: "AI Research Lead",
+                    email: "david@neuralnetworks.com",
+                    phone: "+1 (555) 789-0123",
+                    website: "neuralnetworks.com",
+                    location: "Boston, MA"
+                };
+                
+                // Update card preview with AI extracted data
+                cardPreview.innerHTML = `
+                    <div style="text-align: left; width: 100%;">
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">AI Scan Results</h3>
+                        <p><strong>Company:</strong> ${mockCard.company}</p>
+                        <p><strong>Name:</strong> ${mockCard.name}</p>
+                        <p><strong>Title:</strong> ${mockCard.title}</p>
+                        <p><strong>Email:</strong> ${mockCard.email}</p>
+                        <p><strong>Phone:</strong> ${mockCard.phone}</p>
+                        <p><strong>Website:</strong> ${mockCard.website}</p>
+                        <p><strong>Location:</strong> ${mockCard.location}</p>
+                        <button class="action-btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveAICard()">
+                            <i class="fas fa-save"></i> Save This Card
+                        </button>
+                    </div>
+                `;
+                
+                hideLoading();
+                
+                // Scroll to preview
+                cardPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 2500);
+        }
+
+        // Save the AI scanned card
+        function saveAICard() {
+            // Create a new card from AI data
+            const newCard = {
+                id: cards.length > 0 ? Math.max(...cards.map(c => c.id)) + 1 : 1,
+                company: "Neural Networks Inc.",
+                date: new Date().toLocaleDateString('en-US'),
+                name: "David Miller",
+                title: "AI Research Lead",
+                email: "david@neuralnetworks.com",
+                phone: "+1 (555) 789-0123",
+                website: "neuralnetworks.com",
+                location: "Boston, MA"
+            };
+            
+            // Add to cards array
+            cards.unshift(newCard);
+            
+            // Update UI
+            renderCards(cards);
+            
+            // Sync to cloud
+            simulateSync();
+            
+            // Reset preview
+            cardPreview.innerHTML = `
+                <i class="fas fa-id-card"></i>
+                <p>No image selected</p>
+                <p>Upload or capture image to preview</p>
+            `;
+            
+            // Show success message
+            alert('Card saved successfully!');
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Search input
+            searchInput.addEventListener('input', (e) => {
+                searchCards(e.target.value);
+            });
+            
+            // Clear search button
+            clearSearch.addEventListener('click', () => {
+                searchInput.value = '';
+                searchCards('');
+                clearSearch.style.display = 'none';
+            });
+            
+            // AI Scan button
+            aiScanBtn.addEventListener('click', simulateAIScan);
+            
+            // Manual sync trigger (click on sync status)
+            syncStatus.addEventListener('click', simulateSync);
+            
+            // Simulate periodic sync (every 30 seconds)
+            setInterval(simulateSync, 30000);
+            
+            // Add sample card buttons
+            document.querySelectorAll('.scan-btn').forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    const actions = ['Camera', 'Gallery', 'Quick Scan'];
+                    alert(`${actions[index]} clicked!\n\nIn a real app, this would open the ${actions[index].toLowerCase()} to scan a card.`);
+                });
+            });
+            
+            // Save card button
+            document.querySelector('.btn-warning').addEventListener('click', () => {
+                alert('Save Card clicked!\n\nIn a real app, this would save the currently scanned card.');
+            });
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
 </body>
 </html>
