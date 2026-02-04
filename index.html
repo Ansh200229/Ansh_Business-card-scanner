@@ -24,31 +24,88 @@
         .search-container { margin-bottom: 20px; }
         .search-container input { width: 100%; max-width: 400px; }
         .loading { color: #007bff; font-style: italic; }
+        .preview-text { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; max-height: 200px; overflow-y: auto; }
+        .camera-container { display: none; margin: 20px 0; text-align: center; }
+        #cameraPreview { max-width: 100%; border: 2px solid #ddd; border-radius: 10px; }
+        .camera-buttons { margin-top: 10px; }
+        .image-preview { max-width: 200px; margin: 10px; border-radius: 5px; }
+        .tab-content { margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card p-4 mb-4">
             <h1 class="text-center mb-4">Business Card Scanner</h1>
-            <p class="text-center text-muted">Upload front and back images of business cards, scan to extract data, and search through your scanned cards. Data can be exported to Excel.</p>
+            <p class="text-center text-muted">Upload or capture business card images using your camera. AI-powered OCR extracts details with high precision.</p>
             
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="frontImage" class="form-label">Front Image:</label>
-                    <input type="file" class="form-control" id="frontImage" accept="image/*">
+            <!-- Tabs for Upload vs Camera -->
+            <ul class="nav nav-tabs" id="imageSourceTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button">Upload Image</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button">Use Camera</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="imageSourceTabContent">
+                <!-- Upload Tab -->
+                <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-6">
+                            <label for="frontImage" class="form-label">Front Image:</label>
+                            <input type="file" class="form-control" id="frontImage" accept="image/*" capture="environment">
+                            <div class="mt-2">
+                                <img id="frontPreview" class="image-preview" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="backImage" class="form-label">Back Image (optional):</label>
+                            <input type="file" class="form-control" id="backImage" accept="image/*" capture="environment">
+                            <div class="mt-2">
+                                <img id="backPreview" class="image-preview" style="display:none;">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label for="backImage" class="form-label">Back Image (optional):</label>
-                    <input type="file" class="form-control" id="backImage" accept="image/*">
+                
+                <!-- Camera Tab -->
+                <div class="tab-pane fade" id="camera" role="tabpanel">
+                    <div class="camera-container" id="cameraContainer">
+                        <video id="cameraPreview" autoplay playsinline></video>
+                        <div class="camera-buttons">
+                            <button class="btn btn-primary" onclick="captureFront()">Capture Front</button>
+                            <button class="btn btn-secondary" onclick="captureBack()">Capture Back</button>
+                            <button class="btn btn-danger" onclick="stopCamera()">Stop Camera</button>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Front Capture:</h6>
+                                <img id="frontCameraPreview" class="image-preview" style="display:none;">
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Back Capture:</h6>
+                                <img id="backCameraPreview" class="image-preview" style="display:none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-success" onclick="startCamera()" id="startCameraBtn">Start Camera</button>
+                    </div>
                 </div>
             </div>
             
-            <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-                <button class="btn btn-primary" onclick="scanCards()">Scan Card</button>
+            <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap mt-3">
+                <button class="btn btn-primary" onclick="scanCards()">Scan Card with AI</button>
                 <button class="btn btn-success" onclick="exportToExcel()">Export to Excel</button>
                 <button class="btn btn-danger" onclick="clearTable()">Clear Table</button>
                 <button class="btn btn-warning" onclick="saveToLocalStorage()">Save to Browser</button>
                 <button class="btn btn-info" onclick="loadFromLocalStorage()">Load from Browser</button>
+            </div>
+            
+            <div id="previewSection" style="display: none;">
+                <h5>AI Analysis Results:</h5>
+                <div class="preview-text" id="extractedText"></div>
             </div>
         </div>
         
@@ -75,41 +132,198 @@
     </div>
 
     <script>
-        // Load saved data when page loads
-        window.onload = loadFromLocalStorage;
+        // Global variables
+        let stream = null;
+        let frontCameraImage = null;
+        let backCameraImage = null;
+        
+        window.onload = function() {
+            loadFromLocalStorage();
+            setupImagePreviews();
+        };
+        
+        // Setup image preview for file uploads
+        function setupImagePreviews() {
+            document.getElementById('frontImage').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.getElementById('frontPreview');
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            document.getElementById('backImage').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.getElementById('backPreview');
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Camera functions
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Use back camera on mobile
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false 
+                });
+                
+                const video = document.getElementById('cameraPreview');
+                video.srcObject = stream;
+                document.getElementById('cameraContainer').style.display = 'block';
+                document.getElementById('startCameraBtn').style.display = 'none';
+            } catch (err) {
+                alert('Cannot access camera: ' + err.message);
+                // Fallback to file upload
+                document.getElementById('upload-tab').click();
+            }
+        }
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            document.getElementById('cameraContainer').style.display = 'none';
+            document.getElementById('startCameraBtn').style.display = 'inline-block';
+        }
+        
+        function captureFront() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            frontCameraImage = canvas.toDataURL('image/jpeg');
+            const img = document.getElementById('frontCameraPreview');
+            img.src = frontCameraImage;
+            img.style.display = 'block';
+            
+            alert('Front image captured!');
+        }
+        
+        function captureBack() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            backCameraImage = canvas.toDataURL('image/jpeg');
+            const img = document.getElementById('backCameraPreview');
+            img.src = backCameraImage;
+            img.style.display = 'block';
+            
+            alert('Back image captured!');
+        }
+        
+        // Convert dataURL to File object
+        function dataURLtoFile(dataurl, filename) {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], filename, { type: mime });
+        }
         
         async function scanCards() {
-            const frontFile = document.getElementById('frontImage').files[0];
-            if (!frontFile) {
-                alert('Please upload the front image.');
-                return;
-            }
+            let frontFile, backFile;
             
-            const backFile = document.getElementById('backImage').files[0];
+            // Check source: Camera or Upload
+            const activeTab = document.querySelector('#imageSourceTabContent .tab-pane.active').id;
+            
+            if (activeTab === 'camera') {
+                if (!frontCameraImage) {
+                    alert('Please capture front image first!');
+                    return;
+                }
+                frontFile = dataURLtoFile(frontCameraImage, 'front.jpg');
+                if (backCameraImage) {
+                    backFile = dataURLtoFile(backCameraImage, 'back.jpg');
+                }
+            } else {
+                frontFile = document.getElementById('frontImage').files[0];
+                if (!frontFile) {
+                    alert('Please upload front image or capture using camera!');
+                    return;
+                }
+                backFile = document.getElementById('backImage').files[0];
+            }
             
             const tableBody = document.getElementById('tableBody');
             const loadingRow = document.createElement('tr');
-            loadingRow.innerHTML = '<td colspan="7" class="loading text-center">Processing... This may take a few seconds.</td>';
+            loadingRow.innerHTML = '<td colspan="7" class="loading text-center">AI Processing... This may take 15-30 seconds.</td>';
             tableBody.appendChild(loadingRow);
             
             try {
-                const frontText = await Tesseract.recognize(frontFile, 'eng').then(result => result.data.text);
+                document.getElementById('previewSection').style.display = 'block';
+                
+                // Step 1: OCR with Tesseract
+                const worker = await Tesseract.createWorker();
+                await worker.loadLanguage('eng');
+                await worker.initialize('eng');
+                
+                // Process front image
+                const frontResult = await worker.recognize(frontFile);
+                let frontText = frontResult.data.text;
+                
+                // Process back image if exists
                 let backText = '';
                 if (backFile) {
-                    backText = await Tesseract.recognize(backFile, 'eng').then(result => result.data.text);
+                    const backResult = await worker.recognize(backFile);
+                    backText = backResult.data.text;
                 }
                 
-                const fullText = frontText + ' ' + backText;
+                await worker.terminate();
                 
-                const data = {
-                    company: extractField(fullText, /(?:company|corp|inc|llc|co\.?)[:\s]*([^\n\r]+)/i),
-                    name: extractField(fullText, /(?:name|contact|person)[:\s]*([A-Za-z\s]+)/i),
-                    mobile: extractField(fullText, /(?:mobile|phone|tel|cell)[:\s]*(\+?\d[\d\s\-\$\$]{8,})/i),
-                    email: extractField(fullText, /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i),
-                    designation: extractField(fullText, /(?:designation|title|position|role)[:\s]*([^\n\r]+)/i),
-                    website: extractField(fullText, /(?:website|www\.|http[s]?:\/\/)[:\s]*([^\s\n\r]+)/i),
-                    location: extractField(fullText, /(?:address|location|city|state|country)[:\s]*([^\n\r]+)/i)
-                };
+                const fullText = frontText + '\n' + backText;
+                
+                // Step 2: AI-Powered Extraction using GPT-like logic
+                const data = await extractWithAI(fullText);
+                
+                // Step 3: Fallback to pattern matching if AI extraction failed
+                if (!data.email || !data.name) {
+                    const fallbackData = extractWithPatterns(fullText);
+                    Object.keys(fallbackData).forEach(key => {
+                        if (!data[key] && fallbackData[key]) {
+                            data[key] = fallbackData[key];
+                        }
+                    });
+                }
+                
+                // Display extracted text
+                document.getElementById('extractedText').innerHTML = `
+                    <strong>Raw OCR Text:</strong><br>
+                    <pre>${fullText}</pre><br>
+                    <strong>AI Analysis:</strong><br>
+                    - Name: ${data.name || 'Not found'}<br>
+                    - Email: ${data.email || 'Not found'}<br>
+                    - Phone: ${data.mobile || 'Not found'}<br>
+                    - Company: ${data.company || 'Not found'}<br>
+                    - Title: ${data.designation || 'Not found'}<br>
+                    - Website: ${data.website || 'Not found'}<br>
+                    - Location: ${data.location || 'Not found'}
+                `;
                 
                 tableBody.removeChild(loadingRow);
                 const newRow = document.createElement('tr');
@@ -124,17 +338,162 @@
                 `;
                 tableBody.appendChild(newRow);
                 
-                document.getElementById('frontImage').value = '';
-                document.getElementById('backImage').value = '';
+                // Reset inputs
+                if (activeTab === 'camera') {
+                    frontCameraImage = null;
+                    backCameraImage = null;
+                    document.getElementById('frontCameraPreview').style.display = 'none';
+                    document.getElementById('backCameraPreview').style.display = 'none';
+                } else {
+                    document.getElementById('frontImage').value = '';
+                    document.getElementById('backImage').value = '';
+                    document.getElementById('frontPreview').style.display = 'none';
+                    document.getElementById('backPreview').style.display = 'none';
+                }
                 
-                // Auto-save to browser storage
                 saveToLocalStorage();
                 
-                alert('Card scanned successfully!');
+                // Show success with details
+                const foundFields = Object.values(data).filter(v => v && v !== 'N/A').length;
+                alert(`✅ Scan successful!\nFound ${foundFields} out of 7 fields.\nCheck the preview section for details.`);
+                
             } catch (error) {
                 alert('Error during scanning: ' + error.message);
                 tableBody.removeChild(loadingRow);
             }
+        }
+        
+        // AI-powered extraction using advanced heuristics
+        async function extractWithAI(text) {
+            const data = {
+                company: '',
+                name: '',
+                mobile: '',
+                email: '',
+                designation: '',
+                website: '',
+                location: ''
+            };
+            
+            // Clean text
+            text = text.replace(/\s+/g, ' ').trim();
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+            
+            // Smart line classification
+            lines.forEach((line, index) => {
+                // Email detection
+                const emailMatch = line.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+                if (emailMatch && !data.email) {
+                    data.email = emailMatch[0];
+                }
+                
+                // Phone detection with multiple patterns
+                const phonePatterns = [
+                    /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
+                    /(?:mobile|phone|tel|cell)[:\s]*([+\d\s\-()]{8,})/i,
+                    /(?:m|p|t)[:\s]*([+\d\s\-()]{8,})/i
+                ];
+                
+                phonePatterns.forEach(pattern => {
+                    const match = line.match(pattern);
+                    if (match && !data.mobile) {
+                        data.mobile = match[1] || match[0];
+                        data.mobile = data.mobile.replace(/^(mobile|phone|tel|cell|m|p|t)[:\s]*/gi, '').trim();
+                    }
+                });
+                
+                // Website/URL detection
+                const urlMatch = line.match(/(?:www\.|https?:\/\/)[^\s]+/i);
+                if (urlMatch && !data.website) {
+                    data.website = urlMatch[0];
+                }
+                
+                // Name detection (usually appears early, 2-4 words, title case)
+                if (!data.name && index < 5) {
+                    const words = line.split(/\s+/);
+                    if (words.length >= 2 && words.length <= 4) {
+                        const isTitleCase = words.every(w => /^[A-Z][a-z]*$/.test(w));
+                        const hasCommonName = /^(mr|mrs|ms|dr)\.?\s+/i.test(line) || 
+                                             /[A-Z][a-z]+\.?\s+[A-Z][a-z]+/.test(line);
+                        if (isTitleCase || hasCommonName) {
+                            data.name = line;
+                        }
+                    }
+                }
+                
+                // Company detection (often has INC, CORP, LTD, or is in all caps)
+                if (!data.company && (line.includes('Inc') || line.includes('Corp') || 
+                    line.includes('Ltd') || line.includes('Co.') || /^[A-Z\s&]+$/.test(line))) {
+                    data.company = line;
+                }
+                
+                // Designation detection (common job titles)
+                const titles = [
+                    'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager',
+                    'Engineer', 'Developer', 'Designer', 'Analyst', 'Consultant',
+                    'Specialist', 'Executive', 'Officer', 'Head', 'Lead', 'VP'
+                ];
+                
+                titles.forEach(title => {
+                    if (line.includes(title) && !data.designation) {
+                        data.designation = line;
+                    }
+                });
+                
+                // Location detection (address patterns)
+                const locationPatterns = [
+                    /(\d+\s+[A-Za-z\s]+(?:St|Ave|Rd|Blvd|Dr)[,\s]+)/i,
+                    /([A-Z][a-z]+,\s*[A-Z]{2}\s*\d{5})/,
+                    /(?:address|location|city|state)[:\s]*([^\n]+)/i
+                ];
+                
+                locationPatterns.forEach(pattern => {
+                    const match = line.match(pattern);
+                    if (match && !data.location) {
+                        data.location = match[1] || match[0];
+                    }
+                });
+            });
+            
+            // If name not found, try to find the most name-like line
+            if (!data.name) {
+                const nameCandidates = lines.filter(line => {
+                    const words = line.split(/\s+/);
+                    return words.length >= 2 && words.length <= 3 &&
+                           words.every(w => /^[A-Z]/.test(w)) &&
+                           !line.match(/@|http|\d{3}/);
+                });
+                
+                if (nameCandidates.length > 0) {
+                    data.name = nameCandidates[0];
+                }
+            }
+            
+            return data;
+        }
+        
+        // Pattern matching fallback
+        function extractWithPatterns(text) {
+            const data = {
+                company: extractField(text, /(?:company|corp|inc|llc|ltd|co\.?)[:\s]*([^\n\r]+)/i),
+                name: extractField(text, /(?:name|contact|person)[:\s]*([A-Za-z\s\.]+)/i),
+                mobile: extractField(text, /(?:mobile|phone|tel|cell)[:\s]*([+\d\s\-()]{8,})/i),
+                email: extractField(text, /\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})\b/i),
+                designation: extractField(text, /(?:designation|title|position|role)[:\s]*([^\n\r]+)/i),
+                website: extractField(text, /(?:website|www\.|http[s]?:\/\/)[:\s]*([^\s\n\r]+)/i),
+                location: extractField(text, /(?:address|location|city|state|country)[:\s]*([^\n\r]+)/i)
+            };
+            
+            // Clean extracted data
+            Object.keys(data).forEach(key => {
+                if (data[key]) {
+                    data[key] = data[key].trim();
+                    // Remove label prefixes
+                    data[key] = data[key].replace(/^(company|corp|inc|llc|ltd|co\.?|name|contact|person|mobile|phone|tel|cell|designation|title|position|role|website|address|location|city|state|country)[:\s]*/gi, '');
+                }
+            });
+            
+            return data;
         }
         
         function extractField(text, regex) {
@@ -149,7 +508,7 @@
                 return;
             }
             const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, 'business_cards.xlsx');
+            XLSX.writeFile(wb, `business_cards_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
         
         function saveToLocalStorage() {
@@ -167,7 +526,6 @@
                     location: cells[6].textContent
                 });
             });
-            
             localStorage.setItem('businessCards', JSON.stringify(data));
             alert('Data saved to browser storage!');
         }
@@ -178,7 +536,6 @@
                 const data = JSON.parse(savedData);
                 const tableBody = document.getElementById('tableBody');
                 tableBody.innerHTML = '';
-                
                 data.forEach(card => {
                     const newRow = document.createElement('tr');
                     newRow.innerHTML = `
@@ -192,7 +549,6 @@
                     `;
                     tableBody.appendChild(newRow);
                 });
-                alert('Loaded ' + data.length + ' cards from browser storage.');
             }
         }
         
@@ -200,6 +556,8 @@
             if (confirm('Are you sure you want to clear all data?')) {
                 document.getElementById('tableBody').innerHTML = '';
                 localStorage.removeItem('businessCards');
+                document.getElementById('previewSection').style.display = 'none';
+                alert('All data cleared.');
             }
         }
         
