@@ -2,60 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>✨ CardScan PRO | AI Business Card Scanner</title>
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="style.css" as="style">
-    <link rel="preload" href="script.js" as="script">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    
-    <!-- Primary CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ansh Card Scanner Pro</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Font Awesome with integrity check -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Favicon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/2097/2097026.png">
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#667eea">
-    <meta name="description" content="AI-powered business card scanner with real-time sync and cloud backup">
-    <meta name="keywords" content="business card, scanner, OCR, AI, contact management">
-    <meta property="og:title" content="CardScan PRO - AI Business Card Scanner">
-    <meta property="og:description" content="Scan, extract, and manage business cards with AI-powered OCR">
-    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2097/2097026.png">
-    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <!-- Animated Particles Background -->
-    <div id="particles-js"></div>
-    
-    <!-- Glitch Effect Overlay -->
-    <div class="glitch-overlay"></div>
-    
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="shape shape1"></div>
+        <div class="shape shape2"></div>
+        <div class="shape shape3"></div>
+        <div class="shape shape4"></div>
+        <div class="shape shape5"></div>
+        <div class="floating-card"></div>
+        <div class="floating-card card2"></div>
+        <div class="floating-card card3"></div>
+    </div>
+
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
-        <div class="loader-container">
-            <div class="neon-loader">
-                <div class="neon-ring"></div>
-                <div class="neon-center">
-                    <i class="fas fa-id-card"></i>
-                </div>
-            </div>
-            <div class="loader-text">
-                <span class="glitch" data-text="Initializing CardScan AI">Initializing CardScan AI</span>
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-            </div>
+        <div class="loader">
+            <div class="loader-circle"></div>
+            <div class="loader-text">Initializing Card Scanner</div>
         </div>
     </div>
 
@@ -65,224 +36,614 @@
         <header class="glass-header">
             <div class="header-content">
                 <div class="logo" onclick="window.location.reload()">
-                    <div class="logo-icon">
-                        <i class="fas fa-id-card-alt"></i>
-                        <div class="logo-glow"></div>
-                    </div>
+                    <i class="fas fa-id-card-alt"></i>
                     <div class="logo-text">
-                        <h1 class="neon-text">CardScan<span class="pro-badge">PRO</span></h1>
-                        <p class="logo-subtitle">AI-Powered Business Intelligence</p>
+                        <h1>CardScan<span class="pro-badge">PRO</span></h1>
+                        <p class="logo-subtitle">Universal Business Card Scanner</p>
                     </div>
                 </div>
                 
                 <div class="header-right">
-                    <!-- Real-time Connection Status -->
-                    <div class="connection-status">
-                        <div class="status-indicator" id="connectionStatus">
-                            <div class="status-dot"></div>
-                            <span class="status-text">Online</span>
-                        </div>
+                    <!-- User Badge -->
+                    <div class="user-badge" id="userBadge">
+                        <i class="fas fa-user-circle"></i>
+                        <span>User: <span id="userIdDisplay">Loading...</span></span>
                     </div>
                     
                     <div class="header-stats">
-                        <div class="stat-card" data-stat="cards">
+                        <div class="stat">
                             <div class="stat-icon">
-                                <i class="fas fa-layer-group"></i>
-                                <div class="pulse-aura"></div>
+                                <i class="fas fa-cloud"></i>
+                                <div class="pulse-dot" id="cloudStatus"></div>
                             </div>
                             <div class="stat-info">
                                 <span class="stat-value" id="cardCount">0</span>
-                                <span class="stat-label">CARDS</span>
+                                <span class="stat-label">Cards</span>
                             </div>
                         </div>
-                        
-                        <div class="stat-card" data-stat="sync">
+                        <div class="stat">
                             <div class="stat-icon">
                                 <i class="fas fa-sync-alt"></i>
-                                <div class="sync-spinner"></div>
+                                <div class="spin-ring"></div>
                             </div>
                             <div class="stat-info">
-                                <span class="stat-value" id="syncStatus">LIVE</span>
-                                <span class="stat-label">SYNC</span>
+                                <span class="stat-value" id="syncStatus">Live</span>
+                                <span class="stat-label">Sync</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- User Menu -->
-                    <div class="user-menu">
-                        <button class="user-avatar" id="userAvatar" onclick="toggleUserMenu()">
-                            <i class="fas fa-user"></i>
-                        </button>
-                        <div class="dropdown-menu" id="userDropdown">
-                            <div class="dropdown-item" onclick="showSettings()">
-                                <i class="fas fa-cog"></i> Settings
-                            </div>
-                            <div class="dropdown-item" onclick="exportAllCards()">
-                                <i class="fas fa-share"></i> Export All
-                            </div>
-                            <div class="dropdown-item" onclick="clearAllCards()">
-                                <i class="fas fa-trash"></i> Clear All
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-item" onclick="toggleTheme()">
-                                <i class="fas fa-moon"></i> Toggle Theme
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="menu-toggle" id="menuToggle" onclick="toggleMobileMenu()">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                    <button class="menu-toggle" onclick="toggleMenu()">
+                        <i class="fas fa-bars"></i>
                     </button>
                 </div>
             </div>
             
             <!-- Mobile Menu -->
             <div class="mobile-menu" id="mobileMenu">
-                <div class="menu-header">
-                    <h3>Quick Actions</h3>
-                    <button class="close-menu" onclick="toggleMobileMenu()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
                 <div class="menu-items">
                     <button class="menu-item" onclick="openCamera('back')">
-                        <div class="menu-icon">
-                            <i class="fas fa-camera"></i>
-                        </div>
-                        <div class="menu-content">
-                            <span class="menu-title">Scan Card</span>
-                            <span class="menu-desc">Use camera or upload</span>
-                        </div>
-                        <div class="menu-badge">NEW</div>
+                        <i class="fas fa-camera"></i>
+                        <span>Scan Card</span>
                     </button>
-                    
                     <button class="menu-item" onclick="showAllCards()">
-                        <div class="menu-icon">
-                            <i class="fas fa-th-large"></i>
-                        </div>
-                        <div class="menu-content">
-                            <span class="menu-title">View Cards</span>
-                            <span class="menu-desc">All scanned cards</span>
-                        </div>
-                        <div class="menu-badge" id="cardsBadge">0</div>
+                        <i class="fas fa-th-large"></i>
+                        <span>View Cards</span>
                     </button>
-                    
-                    <button class="menu-item" onclick="showRecentScans()">
-                        <div class="menu-icon">
-                            <i class="fas fa-history"></i>
-                        </div>
-                        <div class="menu-content">
-                            <span class="menu-title">Recent Scans</span>
-                            <span class="menu-desc">Last 24 hours</span>
-                        </div>
+                    <button class="menu-item" onclick="exportAllCards()">
+                        <i class="fas fa-share"></i>
+                        <span>Export All</span>
                     </button>
-                    
-                    <button class="menu-item" onclick="showSettings()">
-                        <div class="menu-icon">
-                            <i class="fas fa-cog"></i>
-                        </div>
-                        <div class="menu-content">
-                            <span class="menu-title">Settings</span>
-                            <span class="menu-desc">App preferences</span>
-                        </div>
+                    <button class="menu-item" onclick="clearAllCards()">
+                        <i class="fas fa-trash"></i>
+                        <span>Clear All</span>
                     </button>
                 </div>
             </div>
         </header>
 
-        <!-- Main Content - Modified to use Flexbox for better mobile support -->
+        <!-- Main Content -->
         <main class="main-content">
-            <!-- Floating Action Button -->
-            <button class="fab" onclick="openCamera('back')" title="Scan Card">
-                <i class="fas fa-camera"></i>
-                <div class="fab-ripple"></div>
-            </button>
-            
-            <!-- Scanner Panel -->
-            <section class="panel scanner-panel active" id="scannerPanel">
-                <!-- Panel content remains similar but optimized -->
+            <!-- Left Panel - Scanner -->
+            <section class="panel scanner-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-camera"></i> Scan Card</h2>
+                    <div class="scan-indicator">
+                        <div class="scan-pulse"></div>
+                        <span>Ready</span>
+                    </div>
+                </div>
+                
+                <div class="scanner-container">
+                    <div class="scanner-card">
+                        <div class="scanner-options">
+                            <button class="scanner-option active" onclick="openCamera('back')" id="cameraBtn">
+                                <div class="option-icon">
+                                    <i class="fas fa-camera"></i>
+                                    <div class="option-ring"></div>
+                                </div>
+                                <span class="option-text">Camera</span>
+                            </button>
+                            
+                            <button class="scanner-option" onclick="openFilePicker()">
+                                <div class="option-icon">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <span class="option-text">Gallery</span>
+                                <input type="file" id="cardImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
+                            </button>
+                            
+                            <button class="scanner-option" onclick="startQuickScan()">
+                                <div class="option-icon">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <span class="option-text">Quick Scan</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div class="preview-container">
+                            <div class="preview-frame" id="previewFrame">
+                                <div class="preview-overlay" id="previewOverlay">
+                                    <i class="fas fa-id-card"></i>
+                                    <p>Card Preview</p>
+                                    <small>Upload or capture image</small>
+                                </div>
+                                <img id="previewImage" alt="Card Preview">
+                            </div>
+                            
+                            <div class="preview-controls">
+                                <span id="fileName">No image selected</span>
+                                <button class="btn-scan" onclick="startOCRScan()" id="scanBtn">
+                                    <i class="fas fa-robot"></i>
+                                    <span>AI Scan</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- OCR Progress -->
+                        <div class="ocr-progress" id="ocrProgress" style="display: none;">
+                            <div class="progress-header">
+                                <i class="fas fa-brain"></i>
+                                <span>AI Processing</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span class="progress-text" id="progressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Tips -->
+                <div class="tips-container">
+                    <div class="tips-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Tips for best results:</span>
+                    </div>
+                    <div class="tips-list">
+                        <div class="tip">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Use good lighting</span>
+                        </div>
+                        <div class="tip">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Keep card flat</span>
+                        </div>
+                        <div class="tip">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Focus on text</span>
+                        </div>
+                    </div>
+                </div>
             </section>
-            
-            <!-- Form Panel -->
-            <section class="panel form-panel" id="formPanel">
-                <!-- Panel content remains similar but optimized -->
+
+            <!-- Center Panel - Form -->
+            <section class="panel form-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-edit"></i> Card Details</h2>
+                    <div class="ai-badge">
+                        <i class="fas fa-magic"></i>
+                        <span>AI-Powered</span>
+                    </div>
+                </div>
+                
+                <!-- OCR Results -->
+                <div class="ocr-results-card" id="ocrResultsSection" style="display: none;">
+                    <div class="results-header">
+                        <h3><i class="fas fa-robot"></i> Extracted Data</h3>
+                        <div class="results-controls">
+                            <button class="btn-apply-all" onclick="applyOCRResults()">
+                                <i class="fas fa-check-double"></i>
+                                <span>Apply All</span>
+                            </button>
+                            <button class="btn-clear-results" onclick="clearOCRResults()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="results-grid" id="ocrResults">
+                        <!-- Results will appear here -->
+                    </div>
+                </div>
+                
+                <!-- Form -->
+                <div class="form-card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-building"></i>
+                                <input type="text" id="companyName" placeholder="Company Name" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-user-tie"></i>
+                                <input type="text" id="contactPerson" placeholder="Contact Person" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-id-badge"></i>
+                                <input type="text" id="jobTitle" placeholder="Job Title" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="email" placeholder="Email Address" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="phone" placeholder="Phone Number" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-container">
+                                <i class="fas fa-globe"></i>
+                                <input type="text" id="website" placeholder="Website" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <div class="input-container">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="location" placeholder="Location/Address" autocomplete="off">
+                                <div class="input-line"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button class="btn-save" onclick="saveCard()" id="saveBtn">
+                            <i class="fas fa-save"></i>
+                            <span>Save Card</span>
+                            <div class="btn-shine"></div>
+                        </button>
+                        
+                        <div class="action-group">
+                            <button class="btn-action" onclick="clearForm()">
+                                <i class="fas fa-broom"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="btn-action" onclick="generateQR()">
+                                <i class="fas fa-qrcode"></i>
+                                <span>QR Code</span>
+                            </button>
+                            <button class="btn-action" onclick="quickFill()">
+                                <i class="fas fa-bolt"></i>
+                                <span>Quick Fill</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sync Status -->
+                <div class="sync-status-card">
+                    <div class="sync-header">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Real-time Cloud Sync</span>
+                    </div>
+                    <div class="sync-info">
+                        <div class="sync-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Real-time sync across all devices</span>
+                        </div>
+                        <div class="sync-item">
+                            <i class="fas fa-link"></i>
+                            <span>Your User ID:</span>
+                        </div>
+                        <div class="sync-url">
+                            <code id="userSyncId">Loading...</code>
+                            <button class="btn-copy-url" onclick="copyUserId()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="sync-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Changes sync instantly between devices</span>
+                        </div>
+                    </div>
+                </div>
             </section>
-            
-            <!-- Cards Panel -->
-            <section class="panel cards-panel" id="cardsPanel">
-                <!-- Panel content remains similar but optimized -->
+
+            <!-- Right Panel - Cards -->
+            <section class="panel cards-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-th-large"></i> Saved Cards</h2>
+                    <div class="view-controls">
+                        <button class="view-btn active" onclick="setViewMode('grid')">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="view-btn" onclick="setViewMode('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button class="view-btn" onclick="refreshCards()">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" 
+                           id="searchBox" 
+                           class="search-box" 
+                           placeholder="Search cards by company, name, email, phone..." 
+                           autocomplete="off">
+                    <button class="clear-search" onclick="clearSearch()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="search-stats">
+                        <span id="searchResultsCount">Total: 0 cards</span>
+                        <span id="searchTips">Start typing to search through your cards</span>
+                    </div>
+                </div>
+                
+                <!-- Cards Container -->
+                <div class="cards-container">
+                    <!-- Cards Grid View -->
+                    <div class="cards-grid" id="cardsGrid">
+                        <!-- Cards will be loaded here -->
+                    </div>
+                    
+                    <!-- Cards List View -->
+                    <div class="cards-list" id="cardsList" style="display: none;">
+                        <div class="list-header">
+                            <div class="list-column">Company</div>
+                            <div class="list-column">Contact</div>
+                            <div class="list-column">Phone</div>
+                            <div class="list-column">Actions</div>
+                        </div>
+                        <div class="list-body" id="cardsListBody">
+                            <!-- List items will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">
+                            <i class="fas fa-id-card"></i>
+                            <div class="empty-ripple"></div>
+                        </div>
+                        <h3>No Cards Yet</h3>
+                        <p>Scan your first business card to get started</p>
+                        <button class="btn-empty" onclick="openCamera('back')">
+                            <i class="fas fa-camera"></i>
+                            <span>Scan First Card</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="stats-card">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="totalCards">0</span>
+                                <span class="stat-label">Total Cards</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-sync"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="lastSync">Just now</span>
+                                <span class="stat-label">Last Sync</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="sharedCount">0</span>
+                                <span class="stat-label">Shared</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
 
-        <!-- Enhanced Quick Actions -->
-        <div class="quick-actions-bar">
-            <button class="quick-action-btn" onclick="openCamera('back')" data-tooltip="Scan Card">
+        <!-- Bottom Navigation (Mobile) -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="showPanel('scanner')">
                 <i class="fas fa-camera"></i>
-                <span class="pulse-dot"></span>
+                <span>Scan</span>
             </button>
-            <button class="quick-action-btn" onclick="saveCard()" data-tooltip="Save Card">
+            <button class="nav-btn" onclick="showPanel('form')">
+                <i class="fas fa-edit"></i>
+                <span>Details</span>
+            </button>
+            <button class="nav-btn" onclick="showPanel('cards')">
+                <i class="fas fa-th-large"></i>
+                <span>Cards</span>
+            </button>
+            <button class="nav-btn" onclick="showSettings()">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </button>
+        </nav>
+
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions">
+            <button class="quick-action" onclick="openCamera('back')">
+                <i class="fas fa-camera"></i>
+            </button>
+            <button class="quick-action" onclick="saveCard()">
                 <i class="fas fa-save"></i>
             </button>
-            <button class="quick-action-btn" onclick="showAllCards()" data-tooltip="View Cards">
-                <i class="fas fa-th-large"></i>
+            <button class="quick-action" onclick="refreshCards()">
+                <i class="fas fa-redo"></i>
             </button>
-            <button class="quick-action-btn" onclick="exportAllCards()" data-tooltip="Export">
-                <i class="fas fa-share-alt"></i>
+            <button class="quick-action" onclick="exportAllCards()">
+                <i class="fas fa-share"></i>
             </button>
-        </div>
-
-        <!-- Offline Indicator -->
-        <div class="offline-indicator" id="offlineIndicator">
-            <i class="fas fa-wifi-slash"></i>
-            <span>You are offline. Changes will sync when online.</span>
         </div>
     </div>
 
-    <!-- Modals (same structure but enhanced) -->
-    
     <!-- Camera Modal -->
     <div id="cameraModal" class="modal">
-        <!-- Enhanced camera UI -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> Card Scanner</h3>
+                <button class="modal-close" onclick="closeCamera()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="camera-view">
+                    <video id="cameraFeed" autoplay playsinline></video>
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame">
+                            <div class="corner tl"></div>
+                            <div class="corner tr"></div>
+                            <div class="corner bl"></div>
+                            <div class="corner br"></div>
+                        </div>
+                        <div class="scan-line"></div>
+                        <div class="scan-instruction">
+                            <i class="fas fa-hand-point-up"></i>
+                            <p>Position card within frame</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-controls">
+                    <button class="btn-capture" onclick="captureImage()">
+                        <i class="fas fa-camera"></i>
+                        <span>Capture</span>
+                    </button>
+                    <button class="btn-switch" onclick="switchCamera()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="btn-flash" onclick="toggleFlash()" id="flashBtn">
+                        <i class="fas fa-bolt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <!-- Card Details Modal -->
     <div id="cardDetailsModal" class="modal">
-        <!-- Enhanced card details -->
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3><i class="fas fa-id-card"></i> Card Details</h3>
+                <button class="modal-close" onclick="closeCardModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="cardDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
     </div>
-    
+
     <!-- QR Code Modal -->
     <div id="qrModal" class="modal">
-        <!-- Enhanced QR generator -->
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> Share Card</h3>
+                <button class="modal-close" onclick="closeQRModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="qr-container" id="qrContainer"></div>
+                <div class="qr-actions">
+                    <button class="btn-download" onclick="downloadQR()">
+                        <i class="fas fa-download"></i>
+                        <span>Download</span>
+                    </button>
+                    <button class="btn-share" onclick="shareCard()">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Share</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
-        <!-- Enhanced settings -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="modal-close" onclick="closeSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="fas fa-sync"></i> Sync Settings</h4>
+                    <div class="setting-item">
+                        <label>Real-time Sync</label>
+                        <label class="switch">
+                            <input type="checkbox" id="realTimeSync" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Your User ID</label>
+                        <div class="user-id-display">
+                            <code id="settingsUserId">Loading...</code>
+                            <button class="btn-copy-small" onclick="copyUserId()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="fas fa-eye"></i> Appearance</h4>
+                    <div class="setting-item">
+                        <label>Dark Mode</label>
+                        <label class="switch">
+                            <input type="checkbox" id="darkMode">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>View Mode</label>
+                        <select id="viewMode">
+                            <option value="grid">Grid View</option>
+                            <option value="list">List View</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn-reset" onclick="resetSettings()">
+                        <i class="fas fa-redo"></i>
+                        <span>Reset Settings</span>
+                    </button>
+                    <button class="btn-clear-data" onclick="clearAllData()">
+                        <i class="fas fa-trash"></i>
+                        <span>Clear All Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <!-- Toast Container -->
     <div id="toastContainer"></div>
-    
-    <!-- Confetti Container -->
-    <div id="confettiContainer"></div>
 
-    <!-- Scripts - Deferred and Async Loading -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js" defer></script>
+    <!-- Scripts -->
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     
-    <!-- Main Script -->
-    <script src="script.js" defer></script>
+    <!-- Other Libraries -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     
-    <!-- Service Worker for PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js');
-            });
-        }
-    </script>
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Main App -->
+    <script src="script.js"></script>
 </body>
 </html>
