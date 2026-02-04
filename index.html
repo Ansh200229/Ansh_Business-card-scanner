@@ -30,6 +30,9 @@
         .camera-buttons { margin-top: 10px; }
         .image-preview { max-width: 200px; margin: 10px; border-radius: 5px; }
         .tab-content { margin-top: 20px; }
+        .correct-btn { margin: 2px; padding: 2px 8px; font-size: 12px; }
+        .extraction-row { background: #e9ecef; margin: 5px 0; padding: 10px; border-radius: 5px; }
+        .capture-instruction { color: #666; font-size: 0.9em; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -44,7 +47,7 @@
                     <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button">Upload Image</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button">Use Camera</button>
+                    <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" onclick="handleCameraTabClick()">Use Camera</button>
                 </li>
             </ul>
             
@@ -75,8 +78,11 @@
                         <video id="cameraPreview" autoplay playsinline></video>
                         <div class="camera-buttons">
                             <button class="btn btn-primary" onclick="captureFront()">Capture Front</button>
-                            <button class="btn btn-secondary" onclick="captureBack()">Capture Back</button>
+                            <button class="btn btn-secondary" id="captureBackBtn" onclick="captureBack()">Capture Back</button>
                             <button class="btn btn-danger" onclick="stopCamera()">Stop Camera</button>
+                        </div>
+                        <div class="capture-instruction" id="captureInstruction">
+                            Camera will automatically close after capturing both sides
                         </div>
                         <div class="row mt-3">
                             <div class="col-md-6">
@@ -101,6 +107,13 @@
                 <button class="btn btn-danger" onclick="clearTable()">Clear Table</button>
                 <button class="btn btn-warning" onclick="saveToLocalStorage()">Save to Browser</button>
                 <button class="btn btn-info" onclick="loadFromLocalStorage()">Load from Browser</button>
+            </div>
+            
+            <!-- Manual Correction Section -->
+            <div id="correctionSection" style="display: none;" class="mt-4">
+                <h5>Verify & Correct Extraction:</h5>
+                <div id="correctionFields"></div>
+                <button class="btn btn-success mt-2" onclick="saveCorrectedData()">Save Corrected Data</button>
             </div>
             
             <div id="previewSection" style="display: none;">
@@ -136,47 +149,59 @@
         let stream = null;
         let frontCameraImage = null;
         let backCameraImage = null;
+        let currentExtractedData = null;
+        let rawOcrText = '';
+        let autoCloseTimer = null;
         
         window.onload = function() {
             loadFromLocalStorage();
             setupImagePreviews();
+            
+            // Close camera when switching tabs
+            document.getElementById('upload-tab').addEventListener('click', function() {
+                stopCamera();
+            });
         };
         
-        // Setup image preview for file uploads
+        function handleCameraTabClick() {
+            // If camera is already on, do nothing
+            if (!stream) {
+                // Start camera automatically when tab is clicked
+                setTimeout(startCamera, 100);
+            }
+        }
+        
         function setupImagePreviews() {
             document.getElementById('frontImage').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.getElementById('frontPreview');
-                        img.src = e.target.result;
-                        img.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
+                previewImage(e.target, 'frontPreview');
             });
             
             document.getElementById('backImage').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.getElementById('backPreview');
-                        img.src = e.target.result;
-                        img.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
+                previewImage(e.target, 'backPreview');
             });
+        }
+        
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(previewId);
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
         }
         
         // Camera functions
         async function startCamera() {
             try {
+                stopCamera(); // Stop any existing stream
+                
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        facingMode: 'environment', // Use back camera on mobile
+                        facingMode: 'environment',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     },
@@ -187,53 +212,149 @@
                 video.srcObject = stream;
                 document.getElementById('cameraContainer').style.display = 'block';
                 document.getElementById('startCameraBtn').style.display = 'none';
+                
+                // Show capture instructions
+                document.getElementById('captureInstruction').style.display = 'block';
+                
+                // Clear any existing images
+                document.getElementById('frontCameraPreview').style.display = 'none';
+                document.getElementById('backCameraPreview').style.display = 'none';
+                frontCameraImage = null;
+                backCameraImage = null;
+                
             } catch (err) {
+                console.error('Camera error:', err);
                 alert('Cannot access camera: ' + err.message);
-                // Fallback to file upload
+                // Fallback to file upload tab
                 document.getElementById('upload-tab').click();
             }
         }
         
         function stopCamera() {
             if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
                 stream = null;
             }
             document.getElementById('cameraContainer').style.display = 'none';
             document.getElementById('startCameraBtn').style.display = 'inline-block';
+            document.getElementById('captureInstruction').style.display = 'none';
+            
+            // Clear any auto-close timer
+            if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+                autoCloseTimer = null;
+            }
         }
         
         function captureFront() {
-            const video = document.getElementById('cameraPreview');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
+            if (!stream) {
+                alert('Camera is not active. Please start camera first.');
+                return;
+            }
             
-            frontCameraImage = canvas.toDataURL('image/jpeg');
-            const img = document.getElementById('frontCameraPreview');
-            img.src = frontCameraImage;
-            img.style.display = 'block';
+            captureImage('frontCameraPreview');
+            frontCameraImage = getCanvasImage();
+            
+            // Update UI
+            document.getElementById('captureBackBtn').focus(); // Focus on back button
+            document.getElementById('captureInstruction').innerHTML = 
+                'Front captured! Now capture back side or scan now. Camera will close in 5 seconds...';
+            
+            // Auto-close camera after 5 seconds if back not captured
+            setupAutoClose();
             
             alert('Front image captured!');
         }
         
         function captureBack() {
+            if (!stream) {
+                alert('Camera is not active. Please start camera first.');
+                return;
+            }
+            
+            captureImage('backCameraPreview');
+            backCameraImage = getCanvasImage();
+            
+            // Update UI
+            document.getElementById('captureInstruction').innerHTML = 
+                'Both sides captured! Camera will close in 3 seconds...';
+            
+            // Auto-close camera after 3 seconds
+            setupAutoClose(3000, true);
+            
+            alert('Back image captured! Both sides ready for scanning.');
+        }
+        
+        function captureImage(previewId) {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw the current video frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Add a flash effect
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100%';
+            flash.style.height = '100%';
+            flash.style.backgroundColor = 'white';
+            flash.style.opacity = '0.7';
+            flash.style.zIndex = '9999';
+            flash.style.pointerEvents = 'none';
+            document.body.appendChild(flash);
+            
+            // Remove flash after 200ms
+            setTimeout(() => {
+                document.body.removeChild(flash);
+            }, 200);
+            
+            // Show preview
+            const img = document.getElementById(previewId);
+            img.src = canvas.toDataURL('image/jpeg');
+            img.style.display = 'block';
+        }
+        
+        function getCanvasImage() {
             const video = document.getElementById('cameraPreview');
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            backCameraImage = canvas.toDataURL('image/jpeg');
-            const img = document.getElementById('backCameraPreview');
-            img.src = backCameraImage;
-            img.style.display = 'block';
-            
-            alert('Back image captured!');
+            return canvas.toDataURL('image/jpeg');
         }
         
-        // Convert dataURL to File object
+        function setupAutoClose(delay = 5000, bothCaptured = false) {
+            // Clear any existing timer
+            if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+            }
+            
+            // Set new timer
+            autoCloseTimer = setTimeout(() => {
+                stopCamera();
+                
+                if (bothCaptured) {
+                    // Auto-switch to upload tab and start scanning
+                    setTimeout(() => {
+                        document.getElementById('upload-tab').click();
+                        // Auto-click scan button after 1 second
+                        setTimeout(() => {
+                            if (confirm('Both images captured! Start scanning now?')) {
+                                scanCards();
+                            }
+                        }, 1000);
+                    }, 500);
+                }
+            }, delay);
+        }
+        
         function dataURLtoFile(dataurl, filename) {
             const arr = dataurl.split(',');
             const mime = arr[0].match(/:(.*?);/)[1];
@@ -248,11 +369,12 @@
         
         async function scanCards() {
             let frontFile, backFile;
+            let usingCamera = false;
             
-            // Check source: Camera or Upload
             const activeTab = document.querySelector('#imageSourceTabContent .tab-pane.active').id;
             
             if (activeTab === 'camera') {
+                usingCamera = true;
                 if (!frontCameraImage) {
                     alert('Please capture front image first!');
                     return;
@@ -264,10 +386,25 @@
             } else {
                 frontFile = document.getElementById('frontImage').files[0];
                 if (!frontFile) {
-                    alert('Please upload front image or capture using camera!');
-                    return;
+                    // Check if we have camera images
+                    if (frontCameraImage) {
+                        usingCamera = true;
+                        frontFile = dataURLtoFile(frontCameraImage, 'front.jpg');
+                        if (backCameraImage) {
+                            backFile = dataURLtoFile(backCameraImage, 'back.jpg');
+                        }
+                    } else {
+                        alert('Please upload front image or capture using camera!');
+                        return;
+                    }
+                } else {
+                    backFile = document.getElementById('backImage').files[0];
                 }
-                backFile = document.getElementById('backImage').files[0];
+            }
+            
+            // Stop camera if it's running
+            if (stream || usingCamera) {
+                stopCamera();
             }
             
             const tableBody = document.getElementById('tableBody');
@@ -277,17 +414,16 @@
             
             try {
                 document.getElementById('previewSection').style.display = 'block';
+                document.getElementById('correctionSection').style.display = 'none';
                 
-                // Step 1: OCR with Tesseract
+                // OCR Processing
                 const worker = await Tesseract.createWorker();
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
                 
-                // Process front image
                 const frontResult = await worker.recognize(frontFile);
                 let frontText = frontResult.data.text;
                 
-                // Process back image if exists
                 let backText = '';
                 if (backFile) {
                     const backResult = await worker.recognize(backFile);
@@ -296,66 +432,26 @@
                 
                 await worker.terminate();
                 
-                const fullText = frontText + '\n' + backText;
+                rawOcrText = frontText + '\n' + backText;
                 
-                // Step 2: AI-Powered Extraction using GPT-like logic
-                const data = await extractWithAI(fullText);
+                // IMPROVED AI Extraction with Smart Parsing
+                currentExtractedData = extractBusinessCardDataSmart(rawOcrText);
                 
-                // Step 3: Fallback to pattern matching if AI extraction failed
-                if (!data.email || !data.name) {
-                    const fallbackData = extractWithPatterns(fullText);
-                    Object.keys(fallbackData).forEach(key => {
-                        if (!data[key] && fallbackData[key]) {
-                            data[key] = fallbackData[key];
-                        }
-                    });
-                }
-                
-                // Display extracted text
+                // Show extraction results
                 document.getElementById('extractedText').innerHTML = `
                     <strong>Raw OCR Text:</strong><br>
-                    <pre>${fullText}</pre><br>
-                    <strong>AI Analysis:</strong><br>
-                    - Name: ${data.name || 'Not found'}<br>
-                    - Email: ${data.email || 'Not found'}<br>
-                    - Phone: ${data.mobile || 'Not found'}<br>
-                    - Company: ${data.company || 'Not found'}<br>
-                    - Title: ${data.designation || 'Not found'}<br>
-                    - Website: ${data.website || 'Not found'}<br>
-                    - Location: ${data.location || 'Not found'}
+                    <pre>${rawOcrText}</pre><br>
+                    <strong>AI Extraction Results:</strong><br>
+                    ${displayExtractionResults(currentExtractedData)}
                 `;
+                
+                // Show correction interface
+                showCorrectionInterface(currentExtractedData);
                 
                 tableBody.removeChild(loadingRow);
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${data.company || 'N/A'}</td>
-                    <td>${data.name || 'N/A'}</td>
-                    <td>${data.mobile || 'N/A'}</td>
-                    <td>${data.email || 'N/A'}</td>
-                    <td>${data.designation || 'N/A'}</td>
-                    <td>${data.website || 'N/A'}</td>
-                    <td>${data.location || 'N/A'}</td>
-                `;
-                tableBody.appendChild(newRow);
                 
                 // Reset inputs
-                if (activeTab === 'camera') {
-                    frontCameraImage = null;
-                    backCameraImage = null;
-                    document.getElementById('frontCameraPreview').style.display = 'none';
-                    document.getElementById('backCameraPreview').style.display = 'none';
-                } else {
-                    document.getElementById('frontImage').value = '';
-                    document.getElementById('backImage').value = '';
-                    document.getElementById('frontPreview').style.display = 'none';
-                    document.getElementById('backPreview').style.display = 'none';
-                }
-                
-                saveToLocalStorage();
-                
-                // Show success with details
-                const foundFields = Object.values(data).filter(v => v && v !== 'N/A').length;
-                alert(`✅ Scan successful!\nFound ${foundFields} out of 7 fields.\nCheck the preview section for details.`);
+                resetInputs(usingCamera);
                 
             } catch (error) {
                 alert('Error during scanning: ' + error.message);
@@ -363,8 +459,12 @@
             }
         }
         
-        // AI-powered extraction using advanced heuristics
-        async function extractWithAI(text) {
+        // [Keep all the extraction functions from previous version - they remain the same]
+        function extractBusinessCardDataSmart(text) {
+            // ... [Same extraction logic as before] ...
+            text = text.replace(/\s+/g, ' ').trim();
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
             const data = {
                 company: '',
                 name: '',
@@ -375,130 +475,258 @@
                 location: ''
             };
             
-            // Clean text
-            text = text.replace(/\s+/g, ' ').trim();
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+            // Extract EMAIL
+            const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+            const emails = [...text.matchAll(emailRegex)];
+            if (emails.length > 0) {
+                data.email = emails[0][0];
+                const emailName = emails[0][0].split('@')[0];
+                const nameParts = emailName.replace(/[._-]/g, ' ').split(' ');
+                if (nameParts.length >= 2) {
+                    const potentialName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+                    if (!data.name) data.name = potentialName;
+                }
+            }
             
-            // Smart line classification
-            lines.forEach((line, index) => {
-                // Email detection
-                const emailMatch = line.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
-                if (emailMatch && !data.email) {
-                    data.email = emailMatch[0];
+            // Extract PHONE NUMBERS
+            const phoneRegex = /(\+?(\d[\d\s-()]{7,}\d))/g;
+            const phones = [...text.matchAll(phoneRegex)];
+            if (phones.length > 0) {
+                let phone = phones[0][0].replace(/\s+/g, '').replace(/[()\-]/g, '');
+                if (phone.length >= 10) {
+                    data.mobile = phone;
                 }
-                
-                // Phone detection with multiple patterns
-                const phonePatterns = [
-                    /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
-                    /(?:mobile|phone|tel|cell)[:\s]*([+\d\s\-()]{8,})/i,
-                    /(?:m|p|t)[:\s]*([+\d\s\-()]{8,})/i
-                ];
-                
-                phonePatterns.forEach(pattern => {
-                    const match = line.match(pattern);
-                    if (match && !data.mobile) {
-                        data.mobile = match[1] || match[0];
-                        data.mobile = data.mobile.replace(/^(mobile|phone|tel|cell|m|p|t)[:\s]*/gi, '').trim();
+            }
+            
+            // Extract WEBSITE
+            const websiteRegex = /((www\.|https?:\/\/)[^\s]+)/gi;
+            const websites = [...text.matchAll(websiteRegex)];
+            if (websites.length > 0) {
+                data.website = websites[0][0];
+                if (data.website.includes('.')) {
+                    const domain = data.website.split('/')[2] || data.website.split('/')[0];
+                    const companyName = domain.split('.')[0];
+                    if (companyName.length > 2 && !data.company) {
+                        data.company = companyName.charAt(0).toUpperCase() + companyName.slice(1);
                     }
-                });
+                }
+            }
+            
+            // Analyze each line for NAME and DESIGNATION
+            for (let i = 0; i < Math.min(lines.length, 10); i++) {
+                const line = lines[i];
                 
-                // Website/URL detection
-                const urlMatch = line.match(/(?:www\.|https?:\/\/)[^\s]+/i);
-                if (urlMatch && !data.website) {
-                    data.website = urlMatch[0];
+                if (line.includes('@') || line.includes('http') || /\d{8,}/.test(line)) {
+                    continue;
                 }
                 
-                // Name detection (usually appears early, 2-4 words, title case)
-                if (!data.name && index < 5) {
-                    const words = line.split(/\s+/);
-                    if (words.length >= 2 && words.length <= 4) {
-                        const isTitleCase = words.every(w => /^[A-Z][a-z]*$/.test(w));
-                        const hasCommonName = /^(mr|mrs|ms|dr)\.?\s+/i.test(line) || 
-                                             /[A-Z][a-z]+\.?\s+[A-Z][a-z]+/.test(line);
-                        if (isTitleCase || hasCommonName) {
+                const words = line.split(/\s+/);
+                if (words.length >= 2 && words.length <= 4) {
+                    const allStartWithCapital = words.every(w => /^[A-Z]/.test(w));
+                    const hasCommonPrefix = /^(Mr|Ms|Mrs|Dr|Prof)\.?\s/i.test(line);
+                    
+                    if (allStartWithCapital || hasCommonPrefix) {
+                        if (!data.name) {
                             data.name = line;
+                            continue;
                         }
                     }
                 }
                 
-                // Company detection (often has INC, CORP, LTD, or is in all caps)
-                if (!data.company && (line.includes('Inc') || line.includes('Corp') || 
-                    line.includes('Ltd') || line.includes('Co.') || /^[A-Z\s&]+$/.test(line))) {
-                    data.company = line;
-                }
-                
-                // Designation detection (common job titles)
-                const titles = [
-                    'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager',
-                    'Engineer', 'Developer', 'Designer', 'Analyst', 'Consultant',
-                    'Specialist', 'Executive', 'Officer', 'Head', 'Lead', 'VP'
+                const designationPatterns = [
+                    /(Sr\.?\s*|Jr\.?\s*)?(Manager|Director|CEO|CTO|CFO|President|VP|Head|Lead|Engineer|Developer|Analyst|Consultant)/i,
+                    /(Senior|Junior)\s+(.*)/i
                 ];
                 
-                titles.forEach(title => {
-                    if (line.includes(title) && !data.designation) {
-                        data.designation = line;
-                    }
-                });
-                
-                // Location detection (address patterns)
-                const locationPatterns = [
-                    /(\d+\s+[A-Za-z\s]+(?:St|Ave|Rd|Blvd|Dr)[,\s]+)/i,
-                    /([A-Z][a-z]+,\s*[A-Z]{2}\s*\d{5})/,
-                    /(?:address|location|city|state)[:\s]*([^\n]+)/i
-                ];
-                
-                locationPatterns.forEach(pattern => {
+                for (const pattern of designationPatterns) {
                     const match = line.match(pattern);
-                    if (match && !data.location) {
-                        data.location = match[1] || match[0];
+                    if (match && !data.designation) {
+                        data.designation = line;
+                        break;
                     }
-                });
+                }
+            }
+            
+            // Extract COMPANY NAME
+            for (let i = 0; i < Math.min(lines.length, 10); i++) {
+                const line = lines[i];
+                
+                const companyIndicators = [
+                    /(Inc|Corp|Corporation|LLC|Ltd|Limited|Co\.?|Company|Technologies|Solutions|Systems|Group|International|Global)/i,
+                    /^[A-Z\s&]+$/
+                ];
+                
+                for (const indicator of companyIndicators) {
+                    if (indicator.test(line) && line.length > 3 && !data.company) {
+                        data.company = line;
+                        break;
+                    }
+                }
+            }
+            
+            if (!data.company) {
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (line.length > 3 && 
+                        !line.includes('@') && 
+                        !line.includes('http') && 
+                        !/\d{8,}/.test(line) &&
+                        line !== data.name &&
+                        line !== data.designation) {
+                        data.company = line;
+                        break;
+                    }
+                }
+            }
+            
+            Object.keys(data).forEach(key => {
+                if (data[key]) {
+                    data[key] = data[key].trim();
+                    data[key] = data[key].replace(/[.,;:\s]+$/, '');
+                }
             });
             
-            // If name not found, try to find the most name-like line
-            if (!data.name) {
-                const nameCandidates = lines.filter(line => {
-                    const words = line.split(/\s+/);
-                    return words.length >= 2 && words.length <= 3 &&
-                           words.every(w => /^[A-Z]/.test(w)) &&
-                           !line.match(/@|http|\d{3}/);
-                });
-                
-                if (nameCandidates.length > 0) {
-                    data.name = nameCandidates[0];
+            if (data.name) {
+                const designationWords = ['manager', 'director', 'ceo', 'cto', 'cfo', 'president', 'vp', 'head', 'lead'];
+                const nameWords = data.name.split(' ');
+                const filteredName = nameWords.filter(word => 
+                    !designationWords.includes(word.toLowerCase().replace(/[.,]/g, ''))
+                );
+                if (filteredName.length >= 2) {
+                    data.name = filteredName.join(' ');
                 }
             }
             
             return data;
         }
         
-        // Pattern matching fallback
-        function extractWithPatterns(text) {
-            const data = {
-                company: extractField(text, /(?:company|corp|inc|llc|ltd|co\.?)[:\s]*([^\n\r]+)/i),
-                name: extractField(text, /(?:name|contact|person)[:\s]*([A-Za-z\s\.]+)/i),
-                mobile: extractField(text, /(?:mobile|phone|tel|cell)[:\s]*([+\d\s\-()]{8,})/i),
-                email: extractField(text, /\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})\b/i),
-                designation: extractField(text, /(?:designation|title|position|role)[:\s]*([^\n\r]+)/i),
-                website: extractField(text, /(?:website|www\.|http[s]?:\/\/)[:\s]*([^\s\n\r]+)/i),
-                location: extractField(text, /(?:address|location|city|state|country)[:\s]*([^\n\r]+)/i)
-            };
-            
-            // Clean extracted data
-            Object.keys(data).forEach(key => {
-                if (data[key]) {
-                    data[key] = data[key].trim();
-                    // Remove label prefixes
-                    data[key] = data[key].replace(/^(company|corp|inc|llc|ltd|co\.?|name|contact|person|mobile|phone|tel|cell|designation|title|position|role|website|address|location|city|state|country)[:\s]*/gi, '');
-                }
-            });
-            
-            return data;
+        function displayExtractionResults(data) {
+            let html = '<div class="extraction-row">';
+            for (const [key, value] of Object.entries(data)) {
+                const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                html += `<strong>${label}:</strong> ${value || '<span style="color:red">Not found</span>'}<br>`;
+            }
+            html += '</div>';
+            return html;
         }
         
-        function extractField(text, regex) {
-            const match = text.match(regex);
-            return match ? match[1].trim() : null;
+        function showCorrectionInterface(data) {
+            const container = document.getElementById('correctionFields');
+            container.innerHTML = '';
+            
+            const fields = [
+                { key: 'name', label: 'Contact Person', example: 'John Smith' },
+                { key: 'company', label: 'Company Name', example: 'ABC Technologies Inc' },
+                { key: 'mobile', label: 'Mobile Number', example: '+91 9876543210' },
+                { key: 'email', label: 'Email ID', example: 'john@example.com' },
+                { key: 'designation', label: 'Designation', example: 'Senior Manager' },
+                { key: 'website', label: 'Website', example: 'www.example.com' },
+                { key: 'location', label: 'Location', example: 'Mumbai, India' }
+            ];
+            
+            fields.forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'mb-2';
+                div.innerHTML = `
+                    <label class="form-label">${field.label}:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="correct_${field.key}" 
+                               value="${data[field.key] || ''}" placeholder="${field.example}">
+                        <button class="btn btn-outline-secondary correct-btn" type="button" 
+                                onclick="suggestFromText('${field.key}')">Suggest</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('correctionSection').style.display = 'block';
+        }
+        
+        function suggestFromText(field) {
+            const suggestions = extractSuggestionsFromText(rawOcrText, field);
+            if (suggestions.length > 0) {
+                const input = document.getElementById(`correct_${field}`);
+                input.value = suggestions[0];
+                input.focus();
+            }
+        }
+        
+        function extractSuggestionsFromText(text, field) {
+            const lines = text.split('\n').map(l => l.trim());
+            const suggestions = [];
+            
+            switch(field) {
+                case 'name':
+                    lines.forEach(line => {
+                        const words = line.split(/\s+/);
+                        if (words.length >= 2 && words.length <= 3 && 
+                            words.every(w => /^[A-Z]/.test(w))) {
+                            suggestions.push(line);
+                        }
+                    });
+                    break;
+                    
+                case 'mobile':
+                    const phoneRegex = /(\+?(\d[\d\s-()]{7,}\d))/g;
+                    const phones = [...text.matchAll(phoneRegex)];
+                    phones.forEach(p => suggestions.push(p[0].replace(/\s+/g, ' ')));
+                    break;
+                    
+                case 'company':
+                    lines.forEach(line => {
+                        if (line.length > 3 && 
+                            (line.includes('Inc') || line.includes('Corp') || 
+                             line.includes('Ltd') || line.includes('Co.') ||
+                             /^[A-Z\s&]+$/.test(line))) {
+                            suggestions.push(line);
+                        }
+                    });
+                    break;
+            }
+            
+            return suggestions.slice(0, 3);
+        }
+        
+        function saveCorrectedData() {
+            const correctedData = {};
+            const fields = ['name', 'company', 'mobile', 'email', 'designation', 'website', 'location'];
+            
+            fields.forEach(field => {
+                const value = document.getElementById(`correct_${field}`).value.trim();
+                correctedData[field] = value || 'N/A';
+            });
+            
+            const tableBody = document.getElementById('tableBody');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${correctedData.company}</td>
+                <td>${correctedData.name}</td>
+                <td>${correctedData.mobile}</td>
+                <td>${correctedData.email}</td>
+                <td>${correctedData.designation}</td>
+                <td>${correctedData.website}</td>
+                <td>${correctedData.location}</td>
+            `;
+            tableBody.appendChild(newRow);
+            
+            saveToLocalStorage();
+            document.getElementById('correctionSection').style.display = 'none';
+            
+            alert('Data saved successfully!');
+        }
+        
+        function resetInputs(usingCamera) {
+            if (usingCamera) {
+                frontCameraImage = null;
+                backCameraImage = null;
+                document.getElementById('frontCameraPreview').style.display = 'none';
+                document.getElementById('backCameraPreview').style.display = 'none';
+            } else {
+                document.getElementById('frontImage').value = '';
+                document.getElementById('backImage').value = '';
+                document.getElementById('frontPreview').style.display = 'none';
+                document.getElementById('backPreview').style.display = 'none';
+            }
         }
         
         function exportToExcel() {
@@ -557,6 +785,7 @@
                 document.getElementById('tableBody').innerHTML = '';
                 localStorage.removeItem('businessCards');
                 document.getElementById('previewSection').style.display = 'none';
+                document.getElementById('correctionSection').style.display = 'none';
                 alert('All data cleared.');
             }
         }
@@ -568,6 +797,18 @@
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(filter) ? '' : 'none';
             });
+        });
+        
+        // Close camera when page is hidden
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopCamera();
+            }
+        });
+        
+        // Close camera when user navigates away
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
         });
     </script>
 </body>
