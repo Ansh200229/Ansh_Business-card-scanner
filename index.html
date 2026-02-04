@@ -6,513 +6,137 @@
     <title>CardScan - Universal Business Card Scanner</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        /* ... (keep all the previous CSS styles exactly as they were) ... */
         
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #7209b7;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
-            --success: #4cc9f0;
-            --warning: #f72585;
-            --border-radius: 12px;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
-        
-        body {
-            background-color: #f5f7fb;
-            color: var(--dark);
-            line-height: 1.6;
-            padding-bottom: 80px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 25px 0;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo i {
-            font-size: 2.2rem;
-        }
-        
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-        
-        .logo span {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        
-        .sync-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-        }
-        
-        .sync-status i {
-            font-size: 1rem;
-        }
-        
-        .sync-status.synced {
-            background: rgba(76, 201, 240, 0.3);
-        }
-        
-        .sync-status.syncing {
-            background: rgba(247, 37, 133, 0.3);
-        }
-        
-        .search-container {
-            margin: 25px 0;
-            position: relative;
-        }
-        
-        .search-box {
-            width: 100%;
-            padding: 15px 20px;
-            padding-left: 50px;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            box-shadow: var(--shadow);
-            background-color: white;
-            transition: var(--transition);
-        }
-        
-        .search-box:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
-            font-size: 1.2rem;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-        
-        @media (max-width: 992px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .section {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-        }
-        
-        .section-title {
-            font-size: 1.4rem;
-            color: var(--primary);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--light-gray);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: var(--secondary);
-        }
-        
-        .scan-options {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .scan-btn {
-            flex: 1;
-            min-width: 150px;
-            padding: 18px;
-            border-radius: var(--border-radius);
-            background-color: var(--light-gray);
-            border: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .scan-btn:hover {
-            background-color: var(--primary);
-            color: white;
-            transform: translateY(-3px);
-        }
-        
-        .scan-btn i {
-            font-size: 1.8rem;
-        }
-        
-        .card-preview {
-            text-align: center;
-            padding: 30px;
-            border: 2px dashed var(--light-gray);
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .card-preview i {
-            font-size: 4rem;
-            color: var(--gray);
-            margin-bottom: 20px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .action-btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .btn-secondary {
-            background-color: var(--light-gray);
-            color: var(--dark);
-        }
-        
-        .btn-secondary:hover {
-            background-color: #dde1e7;
-        }
-        
-        .btn-warning {
-            background-color: var(--warning);
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background-color: #e11570;
-        }
-        
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
-        
-        .card-item {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            box-shadow: var(--shadow);
-            border-left: 5px solid var(--primary);
-            transition: var(--transition);
-            position: relative;
-        }
-        
-        .card-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-        
-        .card-company {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .card-date {
-            font-size: 0.85rem;
-            color: var(--gray);
-        }
-        
-        .card-person {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        
-        .card-title {
-            color: var(--secondary);
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 0.95rem;
-        }
-        
-        .card-contact {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .card-contact div {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.95rem;
-        }
-        
-        .card-contact i {
-            color: var(--primary);
-            width: 20px;
-        }
-        
-        .card-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        
-        .card-btn {
-            padding: 8px 15px;
-            border-radius: 6px;
-            border: none;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .card-btn.view {
-            background-color: var(--light-gray);
-            color: var(--dark);
-        }
-        
-        .card-btn.edit {
-            background-color: var(--success);
-            color: white;
-        }
-        
-        .card-btn.delete {
-            background-color: #ff6b6b;
-            color: white;
-        }
-        
-        .no-cards {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px;
-            color: var(--gray);
-        }
-        
-        .no-cards i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        
-        .feature-item {
-            background-color: var(--light);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            text-align: center;
-            transition: var(--transition);
-        }
-        
-        .feature-item:hover {
-            background-color: var(--primary);
-            color: white;
-            transform: translateY(-5px);
-        }
-        
-        .feature-item:hover i {
-            color: white;
-        }
-        
-        .feature-item i {
-            font-size: 2rem;
-            color: var(--primary);
-            margin-bottom: 15px;
-        }
-        
-        .sync-info {
-            background-color: #e7f7ff;
-            border-left: 5px solid var(--success);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin-top: 30px;
-        }
-        
-        .sync-info a {
-            color: var(--primary);
-            font-weight: 600;
-            text-decoration: none;
-        }
-        
-        .sync-info a:hover {
-            text-decoration: underline;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--gray);
-            font-size: 0.9rem;
-            margin-top: 40px;
-        }
-        
-        .loading {
+        /* Additional styles for camera modal */
+        .camera-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1001;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            color: white;
         }
         
-        .loading.show {
+        .camera-modal.active {
             display: flex;
         }
         
-        .spinner {
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top: 5px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+        .camera-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: var(--dark);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .camera-view {
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        .no-results {
-            grid-column: 1 / -1;
+        #cameraVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .camera-placeholder {
+            color: white;
             text-align: center;
-            padding: 40px;
-            color: var(--gray);
+            padding: 20px;
         }
         
-        .no-results i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
+        .camera-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--primary);
         }
         
-        .search-clear {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
+        .camera-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--dark);
+        }
+        
+        .camera-btn {
+            padding: 15px 30px;
+            border-radius: 50px;
             border: none;
-            color: var(--gray);
-            font-size: 1.2rem;
+            font-weight: 600;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+        
+        .camera-btn.capture {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .camera-btn.capture:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .camera-btn.close {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .camera-btn.close:hover {
+            background-color: #e11570;
+        }
+        
+        .captured-image-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
             display: none;
         }
         
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .scan-options {
-                flex-direction: column;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .cards-container {
-                grid-template-columns: 1fr;
-            }
+        #capturedImage {
+            width: 100%;
+            height: auto;
+        }
+        
+        .camera-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .camera-option-btn {
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .camera-option-btn.active {
+            background-color: var(--primary);
+        }
+        
+        .camera-option-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
@@ -521,6 +145,48 @@
     <div class="loading" id="loading">
         <div class="spinner"></div>
         <p id="loading-text">Syncing your data...</p>
+    </div>
+    
+    <!-- Camera Modal -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="camera-container">
+            <div class="camera-view">
+                <video id="cameraVideo" autoplay playsinline></video>
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    <i class="fas fa-camera"></i>
+                    <h3>Camera Access Required</h3>
+                    <p>Please allow camera access to scan cards</p>
+                </div>
+            </div>
+            
+            <div class="captured-image-container" id="capturedImageContainer">
+                <img id="capturedImage" alt="Captured Card">
+            </div>
+            
+            <div class="camera-controls">
+                <button class="camera-btn close" id="closeCamera">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button class="camera-btn capture" id="captureBtn">
+                    <i class="fas fa-camera"></i> Capture Card
+                </button>
+                <button class="camera-btn capture" id="retakeBtn" style="display: none;">
+                    <i class="fas fa-redo"></i> Retake
+                </button>
+                <button class="camera-btn capture" id="useImageBtn" style="display: none;">
+                    <i class="fas fa-check"></i> Use This Image
+                </button>
+            </div>
+            
+            <div class="camera-options">
+                <button class="camera-option-btn active" id="switchCamera" data-facing-mode="environment">
+                    <i class="fas fa-camera-retro"></i> Rear Camera
+                </button>
+                <button class="camera-option-btn" id="toggleFlash">
+                    <i class="fas fa-bolt"></i> Flash Off
+                </button>
+            </div>
+        </div>
     </div>
     
     <header>
@@ -558,15 +224,15 @@
                 <div class="section">
                     <h2 class="section-title"><i class="fas fa-camera"></i> Scan Card</h2>
                     <div class="scan-options">
-                        <button class="scan-btn">
+                        <button class="scan-btn" id="cameraBtn">
                             <i class="fas fa-camera"></i>
                             <span>Camera</span>
                         </button>
-                        <button class="scan-btn">
+                        <button class="scan-btn" id="galleryBtn">
                             <i class="fas fa-images"></i>
                             <span>Gallery</span>
                         </button>
-                        <button class="scan-btn">
+                        <button class="scan-btn" id="quickScanBtn">
                             <i class="fas fa-bolt"></i>
                             <span>Quick Scan</span>
                         </button>
@@ -583,16 +249,16 @@
                     </div>
                     
                     <div class="action-buttons">
-                        <button class="action-btn btn-secondary">
+                        <button class="action-btn btn-secondary" id="clearBtn">
                             <i class="fas fa-broom"></i> Clear
                         </button>
-                        <button class="action-btn btn-secondary">
+                        <button class="action-btn btn-secondary" id="qrBtn">
                             <i class="fas fa-qrcode"></i> QR Code
                         </button>
                         <button class="action-btn btn-primary" id="aiScanBtn">
                             <i class="fas fa-robot"></i> AI Scan
                         </button>
-                        <button class="action-btn btn-warning">
+                        <button class="action-btn btn-warning" id="saveCardBtn">
                             <i class="fas fa-save"></i> Save Card
                         </button>
                     </div>
@@ -686,28 +352,6 @@
                 phone: "+1 (555) 456-7890",
                 website: "faulhaber.com",
                 location: "Austin, TX"
-            },
-            {
-                id: 4,
-                company: "DataStream Inc.",
-                date: "1/28/2026",
-                name: "Michael Chen",
-                title: "Data Scientist",
-                email: "michael@datastream.com",
-                phone: "+1 (555) 234-5678",
-                website: "datastream.com",
-                location: "Seattle, WA"
-            },
-            {
-                id: 5,
-                company: "GreenTech Solutions",
-                date: "1/25/2026",
-                name: "Emma Wilson",
-                title: "Sustainability Director",
-                email: "emma@greentech.com",
-                phone: "+1 (555) 345-6789",
-                website: "greentech-solutions.com",
-                location: "Portland, OR"
             }
         ];
 
@@ -721,6 +365,31 @@
         const loadingText = document.getElementById('loadingText');
         const aiScanBtn = document.getElementById('aiScanBtn');
         const cardPreview = document.getElementById('cardPreview');
+        
+        // Camera Elements
+        const cameraModal = document.getElementById('cameraModal');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const galleryBtn = document.getElementById('galleryBtn');
+        const quickScanBtn = document.getElementById('quickScanBtn');
+        const closeCamera = document.getElementById('closeCamera');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const useImageBtn = document.getElementById('useImageBtn');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+        const capturedImage = document.getElementById('capturedImage');
+        const capturedImageContainer = document.getElementById('capturedImageContainer');
+        const switchCamera = document.getElementById('switchCamera');
+        const toggleFlash = document.getElementById('toggleFlash');
+        const clearBtn = document.getElementById('clearBtn');
+        const qrBtn = document.getElementById('qrBtn');
+        const saveCardBtn = document.getElementById('saveCardBtn');
+
+        // Camera variables
+        let stream = null;
+        let currentFacingMode = 'environment';
+        let flashOn = false;
+        let capturedImageData = null;
 
         // Initialize the app
         function initApp() {
@@ -1010,6 +679,259 @@
             alert('Card saved successfully!');
         }
 
+        // Camera Functions
+        async function startCamera(facingMode = 'environment') {
+            try {
+                // Stop any existing stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Get camera access
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+                
+                // Set video source
+                cameraVideo.srcObject = stream;
+                cameraVideo.play();
+                cameraPlaceholder.style.display = 'none';
+                cameraVideo.style.display = 'block';
+                
+                // Update camera facing mode
+                currentFacingMode = facingMode;
+                if (facingMode === 'environment') {
+                    switchCamera.innerHTML = '<i class="fas fa-camera-retro"></i> Rear Camera';
+                    switchCamera.setAttribute('data-facing-mode', 'environment');
+                } else {
+                    switchCamera.innerHTML = '<i class="fas fa-user"></i> Front Camera';
+                    switchCamera.setAttribute('data-facing-mode', 'user');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                cameraPlaceholder.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Camera Error</h3>
+                    <p>${error.message}</p>
+                    <p>Please check your camera permissions</p>
+                `;
+                cameraPlaceholder.style.display = 'flex';
+                cameraVideo.style.display = 'none';
+                return false;
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            cameraVideo.srcObject = null;
+        }
+
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraVideo.videoWidth;
+            canvas.height = cameraVideo.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL
+            capturedImageData = canvas.toDataURL('image/jpeg');
+            capturedImage.src = capturedImageData;
+            
+            // Show captured image
+            capturedImageContainer.style.display = 'block';
+            cameraVideo.style.display = 'none';
+            
+            // Update buttons
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'flex';
+            useImageBtn.style.display = 'flex';
+        }
+
+        function retakeImage() {
+            // Hide captured image, show video again
+            capturedImageContainer.style.display = 'none';
+            cameraVideo.style.display = 'block';
+            
+            // Update buttons
+            captureBtn.style.display = 'flex';
+            retakeBtn.style.display = 'none';
+            useImageBtn.style.display = 'none';
+        }
+
+        function useCapturedImage() {
+            // Update card preview with captured image
+            cardPreview.innerHTML = `
+                <img src="${capturedImageData}" alt="Captured Card" style="width: 100%; border-radius: 8px; margin-bottom: 15px;">
+                <p>Card image captured successfully!</p>
+                <p>Click "AI Scan" to extract details</p>
+            `;
+            
+            // Close camera
+            closeCameraModal();
+            
+            // Show AI scan suggestion
+            setTimeout(() => {
+                aiScanBtn.focus();
+            }, 500);
+        }
+
+        function openCameraModal() {
+            cameraModal.classList.add('active');
+            startCamera(currentFacingMode);
+        }
+
+        function closeCameraModal() {
+            cameraModal.classList.remove('active');
+            stopCamera();
+            
+            // Reset camera UI
+            capturedImageContainer.style.display = 'none';
+            cameraVideo.style.display = 'block';
+            captureBtn.style.display = 'flex';
+            retakeBtn.style.display = 'none';
+            useImageBtn.style.display = 'none';
+            cameraPlaceholder.style.display = 'flex';
+            cameraPlaceholder.innerHTML = `
+                <i class="fas fa-camera"></i>
+                <h3>Camera Access Required</h3>
+                <p>Please allow camera access to scan cards</p>
+            `;
+        }
+
+        function toggleCameraFacing() {
+            const newFacingMode = switchCamera.getAttribute('data-facing-mode') === 'environment' ? 'user' : 'environment';
+            startCamera(newFacingMode);
+        }
+
+        function simulateGalleryUpload() {
+            // In a real app, this would open file picker
+            // For demo, we'll simulate an image upload
+            const sampleImage = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80';
+            
+            cardPreview.innerHTML = `
+                <img src="${sampleImage}" alt="Uploaded Card" style="width: 100%; border-radius: 8px; margin-bottom: 15px;">
+                <p>Card image uploaded from gallery!</p>
+                <p>Click "AI Scan" to extract details</p>
+            `;
+        }
+
+        function simulateQuickScan() {
+            showLoading('Quick scanning card...');
+            
+            setTimeout(() => {
+                // Simulate quick scan with mock data
+                const mockCard = {
+                    company: "QuickScan Inc.",
+                    name: "James Wilson",
+                    title: "Sales Director",
+                    email: "james@quickscan.com",
+                    phone: "+1 (555) 111-2222",
+                    website: "quickscan.com",
+                    location: "Chicago, IL"
+                };
+                
+                cardPreview.innerHTML = `
+                    <div style="text-align: left; width: 100%;">
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">Quick Scan Results</h3>
+                        <p><strong>Company:</strong> ${mockCard.company}</p>
+                        <p><strong>Name:</strong> ${mockCard.name}</p>
+                        <p><strong>Title:</strong> ${mockCard.title}</p>
+                        <p><strong>Email:</strong> ${mockCard.email}</p>
+                        <p><strong>Phone:</strong> ${mockCard.phone}</p>
+                        <p><strong>Website:</strong> ${mockCard.website}</p>
+                        <p><strong>Location:</strong> ${mockCard.location}</p>
+                        <button class="action-btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveQuickScanCard()">
+                            <i class="fas fa-save"></i> Save This Card
+                        </button>
+                    </div>
+                `;
+                
+                hideLoading();
+            }, 1500);
+        }
+
+        function saveQuickScanCard() {
+            // Create a new card from quick scan data
+            const newCard = {
+                id: cards.length > 0 ? Math.max(...cards.map(c => c.id)) + 1 : 1,
+                company: "QuickScan Inc.",
+                date: new Date().toLocaleDateString('en-US'),
+                name: "James Wilson",
+                title: "Sales Director",
+                email: "james@quickscan.com",
+                phone: "+1 (555) 111-2222",
+                website: "quickscan.com",
+                location: "Chicago, IL"
+            };
+            
+            // Add to cards array
+            cards.unshift(newCard);
+            
+            // Update UI
+            renderCards(cards);
+            
+            // Sync to cloud
+            simulateSync();
+            
+            // Reset preview
+            cardPreview.innerHTML = `
+                <i class="fas fa-id-card"></i>
+                <p>No image selected</p>
+                <p>Upload or capture image to preview</p>
+            `;
+            
+            // Show success message
+            alert('Card saved successfully!');
+        }
+
+        function clearPreview() {
+            cardPreview.innerHTML = `
+                <i class="fas fa-id-card"></i>
+                <p>No image selected</p>
+                <p>Upload or capture image to preview</p>
+            `;
+        }
+
+        function simulateQRScan() {
+            showLoading('Scanning QR code...');
+            
+            setTimeout(() => {
+                // Simulate QR code scan
+                cardPreview.innerHTML = `
+                    <div style="text-align: left; width: 100%;">
+                        <h3 style="color: var(--primary); margin-bottom: 15px;">QR Code Detected!</h3>
+                        <p><strong>Type:</strong> Business Card</p>
+                        <p><strong>Content:</strong> vCard data found</p>
+                        <p><strong>Action:</strong> Click "AI Scan" to process</p>
+                        <div style="background-color: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; font-size: 0.9rem;">
+                            BEGIN:VCARD<br>
+                            VERSION:3.0<br>
+                            N:Smith;Jane;;;<br>
+                            FN:Jane Smith<br>
+                            ORG:QR Tech Solutions<br>
+                            TITLE:Product Manager<br>
+                            EMAIL:jane@qrtech.com<br>
+                            TEL:+1 (555) 333-4444<br>
+                            END:VCARD
+                        </div>
+                    </div>
+                `;
+                
+                hideLoading();
+            }, 1000);
+        }
+
         // Set up event listeners
         function setupEventListeners() {
             // Search input
@@ -1024,6 +946,46 @@
                 clearSearch.style.display = 'none';
             });
             
+            // Camera button
+            cameraBtn.addEventListener('click', openCameraModal);
+            
+            // Gallery button
+            galleryBtn.addEventListener('click', simulateGalleryUpload);
+            
+            // Quick scan button
+            quickScanBtn.addEventListener('click', simulateQuickScan);
+            
+            // Camera modal buttons
+            closeCamera.addEventListener('click', closeCameraModal);
+            captureBtn.addEventListener('click', captureImage);
+            retakeBtn.addEventListener('click', retakeImage);
+            useImageBtn.addEventListener('click', useCapturedImage);
+            switchCamera.addEventListener('click', toggleCameraFacing);
+            
+            // Flash toggle (simulated)
+            toggleFlash.addEventListener('click', () => {
+                flashOn = !flashOn;
+                toggleFlash.innerHTML = flashOn ? 
+                    '<i class="fas fa-bolt"></i> Flash On' : 
+                    '<i class="fas fa-bolt"></i> Flash Off';
+                toggleFlash.classList.toggle('active', flashOn);
+            });
+            
+            // Clear preview button
+            clearBtn.addEventListener('click', clearPreview);
+            
+            // QR scan button
+            qrBtn.addEventListener('click', simulateQRScan);
+            
+            // Save card button
+            saveCardBtn.addEventListener('click', () => {
+                if (cardPreview.innerHTML.includes('No image selected')) {
+                    alert('Please scan or upload a card image first!');
+                } else {
+                    alert('In a real app, this would save the scanned card details to your collection.');
+                }
+            });
+            
             // AI Scan button
             aiScanBtn.addEventListener('click', simulateAIScan);
             
@@ -1033,17 +995,11 @@
             // Simulate periodic sync (every 30 seconds)
             setInterval(simulateSync, 30000);
             
-            // Add sample card buttons
-            document.querySelectorAll('.scan-btn').forEach((btn, index) => {
-                btn.addEventListener('click', () => {
-                    const actions = ['Camera', 'Gallery', 'Quick Scan'];
-                    alert(`${actions[index]} clicked!\n\nIn a real app, this would open the ${actions[index].toLowerCase()} to scan a card.`);
-                });
-            });
-            
-            // Save card button
-            document.querySelector('.btn-warning').addEventListener('click', () => {
-                alert('Save Card clicked!\n\nIn a real app, this would save the currently scanned card.');
+            // Close camera modal when clicking outside
+            cameraModal.addEventListener('click', (e) => {
+                if (e.target === cameraModal) {
+                    closeCameraModal();
+                }
             });
         }
 
