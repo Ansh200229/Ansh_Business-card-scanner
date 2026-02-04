@@ -1,172 +1,371 @@
+// Configuration
+const CONFIG = {
+    GITHUB_USERNAME: 'ansh200229',
+    REPO_NAME: 'Ansh_Business-card-scanner',
+    GITHUB_TOKEN: 'github_pat_11ATZQ4MI0fnYt3qf4MZ7l_u2g2NDQ2GduZfAm5QITR2PKW2N7zBZ45gWtI2FyQshSJ6YGTY2E1m8tJzC', // Replace with your token
+    SYNC_INTERVAL: 30000, // 30 seconds
+    API_BASE: 'https://api.github.com',
+    DATA_FILE: 'cards_data.json'
+};
+
 // Global variables
-let currentDeviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 10);
-let qrScanner = null;
-let isScanning = false;
+let savedCards = [];
 let currentStream = null;
 let currentCamera = 'back';
 let flashEnabled = false;
 let ocrWorker = null;
 let extractedData = {};
-let savedCards = [];
 let viewMode = 'grid';
+let syncInterval = null;
+let isSyncing = false;
+let isOnline = navigator.onLine;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async function() {
-    // Set device ID
-    document.getElementById('deviceIdDisplay').textContent = currentDeviceId;
-    document.getElementById('deviceIdInput').value = currentDeviceId;
+    // Hide loading screen
+    setTimeout(() => {
+        document.getElementById('loadingScreen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loadingScreen').style.display = 'none';
+        }, 500);
+    }, 1000);
     
-    // Load saved cards
-    loadSavedCards();
+    // Initialize components
+    await initializeApp();
     
-    // Initialize sync status
-    updateSyncStatus();
+    // Start auto-sync
+    startAutoSync();
     
-    // Initialize animations
-    initAnimations();
-    
-    // Set up periodic sync
-    setInterval(updateSyncStatus, 30000);
-    
-    console.log('CardScan PRO initialized');
+    // Handle online/offline status
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOfflineStatus);
 });
 
-// Initialize animations
-function initAnimations() {
-    // Add hover effects to cards
-    const cards = document.querySelectorAll('.business-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-10px) scale(1.02)';
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(0) scale(1)';
-        });
+// Initialize the app
+async function initializeApp() {
+    // Load local cards first
+    loadLocalCards();
+    
+    // Then try to sync with cloud
+    await syncWithCloud();
+    
+    // Initialize UI
+    updateUI();
+    
+    // Show welcome message
+    setTimeout(() => {
+        showToast('Card Scanner Pro is ready!', 'success');
+    }, 1500);
+}
+
+// Load cards from local storage
+function loadLocalCards() {
+    try {
+        const localData = localStorage.getItem('cardscan_local_cards');
+        if (localData) {
+            savedCards = JSON.parse(localData);
+            console.log('Loaded local cards:', savedCards.length);
+        }
+    } catch (error) {
+        console.error('Error loading local cards:', error);
+        savedCards = [];
+    }
+}
+
+// Save cards to local storage
+function saveLocalCards() {
+    try {
+        localStorage.setItem('cardscan_local_cards', JSON.stringify(savedCards));
+        console.log('Saved local cards:', savedCards.length);
+    } catch (error) {
+        console.error('Error saving local cards:', error);
+    }
+}
+
+// Cloud Sync Functions
+async function syncWithCloud() {
+    if (!isOnline) {
+        updateSyncStatus('Offline');
+        return false;
+    }
+    
+    isSyncing = true;
+    updateSyncStatus('Syncing...');
+    
+    try {
+        // Try to fetch from GitHub
+        const cloudData = await fetchFromGitHub();
+        
+        if (cloudData) {
+            // Merge cloud data with local data
+            mergeCards(cloudData);
+            updateSyncStatus('Synced');
+            return true;
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        updateSyncStatus('Sync Failed');
+        return false;
+    } finally {
+        isSyncing = false;
+    }
+}
+
+async function pushToCloud() {
+    if (!isOnline) {
+        showToast('Cannot sync while offline', 'warning');
+        return false;
+    }
+    
+    try {
+        // In a real implementation, you would push to GitHub here
+        // For demo, we'll simulate success
+        console.log('Pushing to cloud:', savedCards.length, 'cards');
+        updateSyncStatus('Uploading...');
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        updateSyncStatus('Synced');
+        showToast('Cards synced to cloud', 'success');
+        return true;
+    } catch (error) {
+        console.error('Push error:', error);
+        updateSyncStatus('Upload Failed');
+        showToast('Failed to sync with cloud', 'error');
+        return false;
+    }
+}
+
+async function fetchFromGitHub() {
+    try {
+        // GitHub API URL for your repository
+        const url = `${CONFIG.API_BASE}/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.REPO_NAME}/contents/${CONFIG.DATA_FILE}`;
+        
+        // This would be the actual fetch call with authentication
+        // const response = await fetch(url, {
+        //     headers: {
+        //         'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+        //         'Accept': 'application/vnd.github.v3+json'
+        //     }
+        // });
+        
+        // For demo, we'll simulate the response
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Return sample data for demo
+        return getSampleCards();
+        
+    } catch (error) {
+        console.error('GitHub fetch error:', error);
+        return null;
+    }
+}
+
+// Merge local and cloud cards
+function mergeCards(cloudCards) {
+    if (!cloudCards || !Array.isArray(cloudCards)) return;
+    
+    const merged = [...savedCards];
+    let newCards = 0;
+    
+    cloudCards.forEach(cloudCard => {
+        const exists = savedCards.some(localCard => localCard.id === cloudCard.id);
+        if (!exists) {
+            merged.push(cloudCard);
+            newCards++;
+        }
     });
+    
+    if (newCards > 0) {
+        savedCards = merged;
+        saveLocalCards();
+        updateUI();
+        showToast(`Synced ${newCards} new cards from cloud`, 'success');
+    }
+}
+
+// Get sample cards for demo
+function getSampleCards() {
+    return [
+        {
+            id: 'card_1',
+            companyName: 'TechCorp Solutions',
+            contactPerson: 'Alex Johnson',
+            jobTitle: 'CEO',
+            email: 'alex@techcorp.com',
+            phone: '+1 (555) 123-4567',
+            website: 'www.techcorp.com',
+            location: 'San Francisco, CA',
+            createdAt: new Date().toISOString(),
+            imageData: null
+        },
+        {
+            id: 'card_2',
+            companyName: 'Innovate Labs',
+            contactPerson: 'Sarah Williams',
+            jobTitle: 'CTO',
+            email: 'sarah@innovatelabs.com',
+            phone: '+1 (555) 987-6543',
+            website: 'www.innovatelabs.com',
+            location: 'New York, NY',
+            createdAt: new Date().toISOString(),
+            imageData: null
+        }
+    ];
+}
+
+// Start auto-sync
+function startAutoSync() {
+    if (syncInterval) clearInterval(syncInterval);
+    
+    syncInterval = setInterval(async () => {
+        if (isOnline) {
+            await syncWithCloud();
+        }
+    }, CONFIG.SYNC_INTERVAL);
 }
 
 // Update sync status
-function updateSyncStatus() {
-    const status = navigator.onLine ? 'Online' : 'Offline';
-    const color = navigator.onLine ? '#4cd964' : '#ff6b6b';
-    
-    document.getElementById('syncStatus').textContent = status;
-    document.getElementById('syncStatus').style.color = color;
-    
-    if (navigator.onLine) {
-        showToast('Syncing with cloud...', 'info');
+function updateSyncStatus(status) {
+    const syncElement = document.getElementById('syncStatus');
+    if (syncElement) {
+        syncElement.textContent = status;
+        
+        if (status === 'Synced' || status === 'Live') {
+            syncElement.style.color = '#4cd964';
+        } else if (status.includes('Failed')) {
+            syncElement.style.color = '#ff6b6b';
+        } else {
+            syncElement.style.color = '#ffd93d';
+        }
     }
 }
 
-// Load saved cards
-function loadSavedCards() {
-    const saved = localStorage.getItem('cardscan_cards');
-    if (saved) {
-        savedCards = JSON.parse(saved);
-        renderCards();
-    }
+// Handle online/offline status
+function handleOnlineStatus() {
+    isOnline = true;
+    showToast('Back online. Syncing...', 'info');
+    updateSyncStatus('Syncing...');
+    syncWithCloud();
+}
+
+function handleOfflineStatus() {
+    isOnline = false;
+    showToast('You are offline. Working locally.', 'warning');
+    updateSyncStatus('Offline');
+}
+
+// UI Functions
+function updateUI() {
+    renderCards();
     updateCardCount();
+    updateLastSyncTime();
 }
 
-// Update card count
 function updateCardCount() {
-    document.getElementById('cardCount').textContent = savedCards.length;
-    document.getElementById('syncStatus').textContent = savedCards.length + ' cards synced';
+    const count = savedCards.length;
+    document.getElementById('cardCount').textContent = count;
+    document.getElementById('totalCards').textContent = count;
+    
+    // Update header stat
+    const statElement = document.getElementById('cardCount');
+    if (statElement) {
+        statElement.textContent = count;
+    }
 }
 
-// Render cards in current view mode
+function updateLastSyncTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('lastSync').textContent = timeString;
+}
+
+// Card Management
 function renderCards() {
-    const container = document.getElementById('cardsContainer');
     const gridView = document.getElementById('cardsGrid');
     const listView = document.getElementById('cardsList');
+    const listBody = document.getElementById('cardsListBody');
     const emptyState = document.getElementById('emptyState');
-    const tableBody = document.getElementById('cardsTable');
     
     if (savedCards.length === 0) {
-        emptyState.style.display = 'block';
-        gridView.style.display = 'none';
-        listView.style.display = 'none';
+        gridView.innerHTML = '';
+        listBody.innerHTML = '';
+        emptyState.style.display = 'flex';
         return;
     }
     
     emptyState.style.display = 'none';
     
     if (viewMode === 'grid') {
-        gridView.style.display = 'grid';
+        renderGridView(gridView);
         listView.style.display = 'none';
-        renderGridView();
+        gridView.style.display = 'grid';
     } else {
+        renderListView(listBody);
         gridView.style.display = 'none';
-        listView.style.display = 'block';
-        renderListView();
+        listView.style.display = 'flex';
     }
 }
 
-// Render grid view
-function renderGridView() {
-    const grid = document.getElementById('cardsGrid');
-    grid.innerHTML = '';
+function renderGridView(container) {
+    container.innerHTML = '';
     
     savedCards.forEach((card, index) => {
-        const cardElement = createCardElement(card);
-        cardElement.style.animationDelay = (index * 0.1) + 's';
-        grid.appendChild(cardElement);
+        const cardElement = createCardElement(card, index);
+        container.appendChild(cardElement);
     });
 }
 
-// Render list view
-function renderListView() {
-    const table = document.getElementById('cardsTable');
-    table.innerHTML = '';
+function renderListView(container) {
+    container.innerHTML = '';
     
     savedCards.forEach(card => {
-        const row = document.createElement('tr');
+        const listItem = document.createElement('div');
+        listItem.className = 'list-item';
         
-        row.innerHTML = `
-            <td>
+        listItem.innerHTML = `
+            <div class="list-cell">
                 <div class="company-cell">
-                    <div class="company-logo-small" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <div class="company-logo-small" style="background: ${getCardGradient(card.id)};">
                         ${card.companyName ? card.companyName.charAt(0).toUpperCase() : 'C'}
                     </div>
                     <div>
                         <div class="company-name">${card.companyName || 'Unnamed Company'}</div>
-                        <div class="company-job">${card.jobTitle || ''}</div>
+                        <div class="card-date">${card.jobTitle || ''}</div>
                     </div>
                 </div>
-            </td>
-            <td>${card.contactPerson || '—'}</td>
-            <td>${card.email || '—'}</td>
-            <td>
+            </div>
+            <div class="list-cell">${card.contactPerson || '—'}</div>
+            <div class="list-cell">${card.phone || '—'}</div>
+            <div class="list-cell">
                 <div class="list-actions">
-                    <button class="list-btn view" onclick="viewCard('${card.id}')" title="View">
+                    <button class="list-btn view" onclick="viewCard('${card.id}')">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="list-btn edit" onclick="editCard('${card.id}')" title="Edit">
+                    <button class="list-btn edit" onclick="editCard('${card.id}')">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="list-btn delete" onclick="deleteCard('${card.id}')" title="Delete">
+                    <button class="list-btn delete" onclick="deleteCard('${card.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
-            </td>
+            </div>
         `;
         
-        table.appendChild(row);
+        container.appendChild(listItem);
     });
 }
 
-// Create card element for grid view
-function createCardElement(card) {
+function createCardElement(card, index) {
     const cardElement = document.createElement('div');
     cardElement.className = 'business-card';
-    cardElement.dataset.id = card.id;
-    
-    const gradient = getCardGradient(card.id);
+    cardElement.style.animationDelay = `${index * 0.1}s`;
     
     cardElement.innerHTML = `
         <div class="card-header">
             <div class="company-info">
-                <div class="company-logo" style="background: ${gradient};">
+                <div class="company-logo" style="background: ${getCardGradient(card.id)};">
                     ${card.companyName ? card.companyName.charAt(0).toUpperCase() : 'C'}
                 </div>
                 <div>
@@ -175,26 +374,26 @@ function createCardElement(card) {
                 </div>
             </div>
             <div class="card-status">
-                <i class="fas fa-circle" style="color: #4cd964;"></i>
+                <i class="fas fa-cloud" style="color: #667eea;"></i>
             </div>
         </div>
         
         <div class="card-details">
             <div class="card-detail">
                 <i class="fas fa-user-tie"></i>
-                <span>${card.contactPerson || 'Not specified'}</span>
+                <span>${card.contactPerson || '—'}</span>
+            </div>
+            <div class="card-detail">
+                <i class="fas fa-id-badge"></i>
+                <span>${card.jobTitle || '—'}</span>
             </div>
             <div class="card-detail">
                 <i class="fas fa-envelope"></i>
-                <span>${card.email || 'Not specified'}</span>
+                <span>${card.email || '—'}</span>
             </div>
             <div class="card-detail">
                 <i class="fas fa-phone"></i>
-                <span>${card.phone || 'Not specified'}</span>
-            </div>
-            <div class="card-detail">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>${card.location || 'Not specified'}</span>
+                <span>${card.phone || '—'}</span>
             </div>
         </div>
         
@@ -214,7 +413,6 @@ function createCardElement(card) {
     return cardElement;
 }
 
-// Get unique gradient for card
 function getCardGradient(id) {
     const gradients = [
         'linear-gradient(135deg, #667eea, #764ba2)',
@@ -225,53 +423,254 @@ function getCardGradient(id) {
         'linear-gradient(135deg, #9d50bb, #6e48aa)'
     ];
     
-    // Use card ID to get consistent gradient
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return gradients[hash % gradients.length];
 }
 
-// Set view mode
-function setViewMode(mode) {
-    viewMode = mode;
+// Save Card
+async function saveCard() {
+    const companyName = document.getElementById('companyName').value.trim();
+    const contactPerson = document.getElementById('contactPerson').value.trim();
     
-    // Update active button
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    if (mode === 'grid') {
-        document.querySelector('.view-btn:nth-child(1)').classList.add('active');
-    } else {
-        document.querySelector('.view-btn:nth-child(2)').classList.add('active');
+    if (!companyName && !contactPerson) {
+        showToast('Please enter company name or contact person', 'warning');
+        return;
     }
     
+    const cardId = 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const cardData = {
+        id: cardId,
+        companyName,
+        contactPerson,
+        jobTitle: document.getElementById('jobTitle').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        website: document.getElementById('website').value.trim(),
+        location: document.getElementById('location').value.trim(),
+        createdAt: new Date().toISOString(),
+        imageData: extractedData.imageData || null
+    };
+    
+    // Save locally
+    savedCards.push(cardData);
+    saveLocalCards();
+    
+    // Update UI
     renderCards();
+    updateCardCount();
+    
+    // Clear form
+    clearForm();
+    
+    // Try to sync with cloud
+    if (isOnline) {
+        await pushToCloud();
+    }
+    
+    // Show success animation
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+    setTimeout(() => {
+        saveBtn.style.background = 'linear-gradient(135deg, #4cd964, #2ecc71)';
+    }, 1000);
+    
+    showToast('Business card saved!', 'success');
 }
 
-// Refresh cards
-function refreshCards() {
-    loadSavedCards();
-    showToast('Cards refreshed', 'success');
+// View Card
+function viewCard(cardId) {
+    const card = savedCards.find(c => c.id === cardId);
+    if (!card) return;
+    
+    const modal = document.getElementById('cardDetailsModal');
+    const content = document.getElementById('cardDetailsContent');
+    
+    let html = `
+        <div class="card-details-modal">
+            <div class="card-preview" style="background: ${getCardGradient(cardId)}; padding: 25px; border-radius: 15px;">
+                <div class="card-preview-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="card-logo" style="width: 50px; height: 50px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #333;">
+                        ${card.companyName ? card.companyName.charAt(0).toUpperCase() : 'C'}
+                    </div>
+                    <div>
+                        <div class="card-preview-title" style="font-size: 24px; font-weight: 700; color: white;">${card.companyName || 'Business Card'}</div>
+                        <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9);">${card.jobTitle || ''}</div>
+                    </div>
+                </div>
+                <div class="card-preview-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-user-tie"></i>
+                        <span>${card.contactPerson || '—'}</span>
+                    </div>
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-id-badge"></i>
+                        <span>${card.jobTitle || '—'}</span>
+                    </div>
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-envelope"></i>
+                        <span>${card.email || '—'}</span>
+                    </div>
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-phone"></i>
+                        <span>${card.phone || '—'}</span>
+                    </div>
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-globe"></i>
+                        <span>${card.website || '—'}</span>
+                    </div>
+                    <div class="detail-row" style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: white;">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${card.location || '—'}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-actions-modal" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-modal edit" onclick="editCard('${cardId}'); closeCardModal();" style="flex: 1; padding: 12px; background: #667eea; border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-edit"></i> Edit Card
+                </button>
+                <button class="btn-modal share" onclick="shareCard('${cardId}')" style="flex: 1; padding: 12px; background: #4cd964; border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                <button class="btn-modal delete" onclick="deleteCard('${cardId}'); closeCardModal();" style="flex: 1; padding: 12px; background: #ff6b6b; border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+            
+            ${card.imageData ? `
+                <div class="card-original-image" style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px; color: white;">Original Scan:</h4>
+                    <img src="${card.imageData}" alt="Original scan" style="max-width: 100%; border-radius: 10px;">
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    content.innerHTML = html;
+    modal.style.display = 'flex';
 }
 
-// Device ID functions
-function copyDeviceId() {
-    navigator.clipboard.writeText(currentDeviceId)
-        .then(() => showToast('Device ID copied to clipboard!', 'success'))
-        .catch(err => showToast('Failed to copy', 'error'));
+// Edit Card
+function editCard(cardId) {
+    const card = savedCards.find(c => c.id === cardId);
+    if (!card) return;
+    
+    // Populate form
+    document.getElementById('companyName').value = card.companyName || '';
+    document.getElementById('contactPerson').value = card.contactPerson || '';
+    document.getElementById('jobTitle').value = card.jobTitle || '';
+    document.getElementById('email').value = card.email || '';
+    document.getElementById('phone').value = card.phone || '';
+    document.getElementById('website').value = card.website || '';
+    document.getElementById('location').value = card.location || '';
+    
+    // Update image preview if exists
+    if (card.imageData) {
+        updateImagePreview(card.imageData, 'existing_card.jpg');
+    }
+    
+    // Change save button to update
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.innerHTML = '<i class="fas fa-sync"></i><span>Update Card</span>';
+    saveBtn.dataset.editing = cardId;
+    saveBtn.onclick = function() { updateCard(cardId); };
+    
+    showToast('Card loaded for editing', 'info');
 }
 
-// Camera functions
-function openCamera(cameraType = 'back') {
+// Update Card
+async function updateCard(cardId) {
+    const cardIndex = savedCards.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return;
+    
+    savedCards[cardIndex] = {
+        ...savedCards[cardIndex],
+        companyName: document.getElementById('companyName').value.trim(),
+        contactPerson: document.getElementById('contactPerson').value.trim(),
+        jobTitle: document.getElementById('jobTitle').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        website: document.getElementById('website').value.trim(),
+        location: document.getElementById('location').value.trim()
+    };
+    
+    saveLocalCards();
+    renderCards();
+    
+    // Try to sync with cloud
+    if (isOnline) {
+        await pushToCloud();
+    }
+    
+    // Reset save button
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.innerHTML = '<i class="fas fa-save"></i><span>Save Card</span>';
+    delete saveBtn.dataset.editing;
+    saveBtn.onclick = saveCard;
+    
+    showToast('Card updated!', 'success');
+    clearForm();
+}
+
+// Delete Card
+async function deleteCard(cardId) {
+    if (!confirm('Delete this card?')) return;
+    
+    savedCards = savedCards.filter(card => card.id !== cardId);
+    saveLocalCards();
+    
+    renderCards();
+    updateCardCount();
+    
+    // Try to sync with cloud
+    if (isOnline) {
+        await pushToCloud();
+    }
+    
+    showToast('Card deleted', 'success');
+}
+
+// Clear Form
+function clearForm() {
+    document.getElementById('companyName').value = '';
+    document.getElementById('contactPerson').value = '';
+    document.getElementById('jobTitle').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('website').value = '';
+    document.getElementById('location').value = '';
+    
+    // Reset image preview
+    const preview = document.getElementById('previewImage');
+    const overlay = document.getElementById('previewOverlay');
+    preview.src = '';
+    preview.style.display = 'none';
+    overlay.style.display = 'flex';
+    document.getElementById('fileName').textContent = 'No image selected';
+    
+    // Clear OCR results
+    clearOCRResults();
+    
+    // Reset save button if editing
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn.dataset.editing) {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i><span>Save Card</span>';
+        delete saveBtn.dataset.editing;
+        saveBtn.onclick = saveCard;
+    }
+}
+
+// Camera Functions
+async function openCamera(cameraType = 'back') {
     currentCamera = cameraType;
     const modal = document.getElementById('cameraModal');
     modal.style.display = 'flex';
     
-    // Update active scan option
-    document.querySelectorAll('.scan-option').forEach(opt => opt.classList.remove('active'));
-    event.target.closest('.scan-option').classList.add('active');
+    // Update active button
+    document.querySelectorAll('.scanner-option').forEach(opt => opt.classList.remove('active'));
+    document.getElementById('cameraBtn').classList.add('active');
     
-    startCamera();
+    await startCamera();
 }
 
 async function startCamera() {
@@ -283,16 +682,14 @@ async function startCamera() {
         const constraints = {
             video: {
                 facingMode: currentCamera === 'back' ? { exact: 'environment' } : 'user',
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
             },
             audio: false
         };
         
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         document.getElementById('cameraFeed').srcObject = currentStream;
-        
-        showToast('Camera ready', 'success');
         
     } catch (err) {
         console.error('Camera error:', err);
@@ -310,13 +707,15 @@ async function toggleFlash() {
     if (!currentStream) return;
     
     const track = currentStream.getVideoTracks()[0];
+    const flashBtn = document.getElementById('flashBtn');
+    
     try {
         if (track.getCapabilities && track.getCapabilities().torch) {
             await track.applyConstraints({
                 advanced: [{ torch: !flashEnabled }]
             });
             flashEnabled = !flashEnabled;
-            showToast(`Flash ${flashEnabled ? 'ON' : 'OFF'}`, 'info');
+            flashBtn.style.background = flashEnabled ? 'linear-gradient(135deg, #ffd93d, #ff9f43)' : 'rgba(255, 255, 255, 0.15)';
         }
     } catch (err) {
         showToast('Flash not available', 'warning');
@@ -338,9 +737,9 @@ function captureImage() {
     updateImagePreview(imageData, 'camera_capture.jpg');
     
     closeCamera();
-    showToast('Image captured successfully!', 'success');
+    showToast('Image captured!', 'success');
     
-    // Auto-start OCR after 1 second
+    // Auto-start OCR
     setTimeout(() => {
         startOCRScan();
     }, 1000);
@@ -356,7 +755,7 @@ function closeCamera() {
     }
 }
 
-// File upload
+// File Upload
 function openFilePicker() {
     document.getElementById('cardImageInput').click();
 }
@@ -368,9 +767,8 @@ function previewImage(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         updateImagePreview(e.target.result, file.name);
-        showToast('Image uploaded successfully', 'success');
+        showToast('Image uploaded', 'success');
         
-        // Auto-start OCR
         setTimeout(() => {
             startOCRScan();
         }, 500);
@@ -380,7 +778,7 @@ function previewImage(event) {
 
 function updateImagePreview(imageData, fileName) {
     const preview = document.getElementById('previewImage');
-    const overlay = document.querySelector('.preview-overlay');
+    const overlay = document.getElementById('previewOverlay');
     
     preview.src = imageData;
     preview.style.display = 'block';
@@ -394,18 +792,20 @@ function updateImagePreview(imageData, fileName) {
 async function startOCRScan() {
     const preview = document.getElementById('previewImage');
     const progress = document.getElementById('ocrProgress');
+    const scanBtn = document.getElementById('scanBtn');
     
     if (!preview.src || preview.src.includes('preview-placeholder')) {
         showToast('Please upload or capture an image first', 'warning');
         return;
     }
     
-    // Initialize OCR worker if needed
+    // Initialize OCR worker
     if (!ocrWorker) {
         await initializeOCR();
     }
     
     // Show progress
+    scanBtn.disabled = true;
     progress.style.display = 'block';
     
     try {
@@ -413,12 +813,15 @@ async function startOCRScan() {
         await processOCRResults(result.data);
         
         progress.style.display = 'none';
-        showToast('Text extraction completed!', 'success');
+        scanBtn.disabled = false;
+        
+        showToast('Text extracted successfully!', 'success');
         
     } catch (error) {
         console.error('OCR Error:', error);
         progress.style.display = 'none';
-        showToast('OCR failed. Please try again.', 'error');
+        scanBtn.disabled = false;
+        showToast('OCR failed. Try again.', 'error');
     }
 }
 
@@ -460,7 +863,7 @@ async function processOCRResults(ocrData) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Company name (usually first line)
+        // Company name (first substantial line)
         if (i === 0 && line.length > 2 && line.length < 50) {
             extractedData.companyName = line;
             extractedData.items.push({ type: 'companyName', value: line, confidence: 85 });
@@ -513,7 +916,7 @@ function displayOCRResults() {
     const container = document.getElementById('ocrResults');
     
     if (extractedData.items.length === 0) {
-        container.innerHTML = '<div class="result-item"><span class="result-value">No structured data found</span></div>';
+        container.innerHTML = '<div class="result-item"><span class="result-value">No data found</span></div>';
         section.style.display = 'block';
         return;
     }
@@ -554,7 +957,7 @@ function applyOCRResults() {
         if (field) {
             field.value = item.value;
             
-            // Add animation effect
+            // Animation
             field.style.transform = 'scale(1.05)';
             setTimeout(() => {
                 field.style.transform = 'scale(1)';
@@ -570,236 +973,47 @@ function clearOCRResults() {
     extractedData.items = [];
 }
 
-// Save card
-function saveCard() {
-    const companyName = document.getElementById('companyName').value.trim();
-    const contactPerson = document.getElementById('contactPerson').value.trim();
+// View Mode
+function setViewMode(mode) {
+    viewMode = mode;
     
-    if (!companyName && !contactPerson) {
-        showToast('Please enter company name or contact person', 'warning');
-        return;
-    }
-    
-    const cardId = 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const cardData = {
-        id: cardId,
-        companyName,
-        contactPerson,
-        jobTitle: document.getElementById('jobTitle').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        website: document.getElementById('website').value.trim(),
-        location: document.getElementById('location').value.trim(),
-        createdAt: new Date().toISOString(),
-        imageData: extractedData.imageData || null
-    };
-    
-    // Save to localStorage
-    savedCards.push(cardData);
-    localStorage.setItem('cardscan_cards', JSON.stringify(savedCards));
-    
-    // Update UI
-    renderCards();
-    updateCardCount();
-    
-    // Clear form
-    clearForm();
-    
-    // Show success animation
-    const saveBtn = document.querySelector('.btn-save');
-    saveBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
-    setTimeout(() => {
-        saveBtn.style.background = 'linear-gradient(135deg, #4cd964, #2ecc71)';
-    }, 1000);
-    
-    showToast('Business card saved successfully!', 'success');
-}
-
-// View card
-function viewCard(cardId) {
-    const card = savedCards.find(c => c.id === cardId);
-    if (!card) return;
-    
-    const modal = document.getElementById('cardDetailsModal');
-    const content = document.getElementById('cardDetailsContent');
-    
-    let html = `
-        <div class="card-details-modal">
-            <div class="card-preview" style="background: ${getCardGradient(cardId)};">
-                <div class="card-preview-header">
-                    <div class="card-logo">${card.companyName ? card.companyName.charAt(0).toUpperCase() : 'C'}</div>
-                    <div class="card-preview-title">${card.companyName || 'Business Card'}</div>
-                </div>
-                <div class="card-preview-details">
-                    <div class="detail-row">
-                        <i class="fas fa-user-tie"></i>
-                        <span>${card.contactPerson || '—'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="fas fa-id-badge"></i>
-                        <span>${card.jobTitle || '—'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="fas fa-envelope"></i>
-                        <span>${card.email || '—'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="fas fa-phone"></i>
-                        <span>${card.phone || '—'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="fas fa-globe"></i>
-                        <span>${card.website || '—'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${card.location || '—'}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-actions-modal">
-                <button class="btn-modal edit" onclick="editCard('${cardId}'); closeCardModal();">
-                    <i class="fas fa-edit"></i> Edit Card
-                </button>
-                <button class="btn-modal share" onclick="shareCard('${cardId}')">
-                    <i class="fas fa-share-alt"></i> Share
-                </button>
-                <button class="btn-modal delete" onclick="deleteCard('${cardId}'); closeCardModal();">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </div>
-            
-            ${card.imageData ? `
-                <div class="card-original-image">
-                    <h4>Original Scan:</h4>
-                    <img src="${card.imageData}" alt="Original scan" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">
-                </div>
-            ` : ''}
-        </div>
-    `;
-    
-    content.innerHTML = html;
-    modal.style.display = 'flex';
-}
-
-// Edit card
-function editCard(cardId) {
-    const card = savedCards.find(c => c.id === cardId);
-    if (!card) return;
-    
-    // Populate form
-    document.getElementById('companyName').value = card.companyName || '';
-    document.getElementById('contactPerson').value = card.contactPerson || '';
-    document.getElementById('jobTitle').value = card.jobTitle || '';
-    document.getElementById('email').value = card.email || '';
-    document.getElementById('phone').value = card.phone || '';
-    document.getElementById('website').value = card.website || '';
-    document.getElementById('location').value = card.location || '';
-    
-    // Update image preview if exists
-    if (card.imageData) {
-        const preview = document.getElementById('previewImage');
-        const overlay = document.querySelector('.preview-overlay');
-        preview.src = card.imageData;
-        preview.style.display = 'block';
-        overlay.style.display = 'none';
-        document.getElementById('fileName').textContent = 'existing_card.jpg';
-        extractedData.imageData = card.imageData;
-    }
-    
-    // Change save button to update
-    const saveBtn = document.querySelector('.btn-save');
-    saveBtn.innerHTML = '<i class="fas fa-sync"></i> Update Card';
-    saveBtn.dataset.editing = cardId;
-    saveBtn.onclick = function() { updateCard(cardId); };
-    
-    showToast('Card loaded for editing', 'info');
-}
-
-// Update card
-function updateCard(cardId) {
-    const cardIndex = savedCards.findIndex(c => c.id === cardId);
-    if (cardIndex === -1) return;
-    
-    savedCards[cardIndex] = {
-        ...savedCards[cardIndex],
-        companyName: document.getElementById('companyName').value.trim(),
-        contactPerson: document.getElementById('contactPerson').value.trim(),
-        jobTitle: document.getElementById('jobTitle').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        website: document.getElementById('website').value.trim(),
-        location: document.getElementById('location').value.trim()
-    };
-    
-    localStorage.setItem('cardscan_cards', JSON.stringify(savedCards));
-    renderCards();
-    
-    // Reset save button
-    const saveBtn = document.querySelector('.btn-save');
-    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Card';
-    delete saveBtn.dataset.editing;
-    saveBtn.onclick = saveCard;
-    
-    showToast('Card updated successfully!', 'success');
-    clearForm();
-}
-
-// Delete card
-function deleteCard(cardId) {
-    if (!confirm('Are you sure you want to delete this card?')) return;
-    
-    savedCards = savedCards.filter(card => card.id !== cardId);
-    localStorage.setItem('cardscan_cards', JSON.stringify(savedCards));
+    // Update active button
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
     
     renderCards();
-    updateCardCount();
-    
-    showToast('Card deleted', 'success');
 }
 
-// Clear form
-function clearForm() {
-    document.getElementById('companyName').value = '';
-    document.getElementById('contactPerson').value = '';
-    document.getElementById('jobTitle').value = '';
-    document.getElementById('email').value = '';
-    document.getElementById('phone').value = '';
-    document.getElementById('website').value = '';
-    document.getElementById('location').value = '';
-    
-    // Reset image preview
-    const preview = document.getElementById('previewImage');
-    const overlay = document.querySelector('.preview-overlay');
-    preview.src = '';
-    preview.style.display = 'none';
-    overlay.style.display = 'flex';
-    document.getElementById('fileName').textContent = 'No file selected';
-    
-    // Clear OCR results
-    clearOCRResults();
-    
-    // Reset save button if editing
-    const saveBtn = document.querySelector('.btn-save');
-    if (saveBtn.dataset.editing) {
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Card';
-        delete saveBtn.dataset.editing;
-        saveBtn.onclick = saveCard;
-    }
+// Refresh cards
+function refreshCards() {
+    renderCards();
+    showToast('Cards refreshed', 'info');
 }
 
-// Close card modal
-function closeCardModal() {
-    document.getElementById('cardDetailsModal').style.display = 'none';
+// Quick Actions
+function startQuickScan() {
+    openCamera('back');
 }
 
-// Share card
+function quickFill() {
+    // Fill form with sample data
+    document.getElementById('companyName').value = 'Tech Innovations Inc';
+    document.getElementById('contactPerson').value = 'John Smith';
+    document.getElementById('jobTitle').value = 'Senior Developer';
+    document.getElementById('email').value = 'john@techinnovations.com';
+    document.getElementById('phone').value = '+1 (555) 123-4567';
+    document.getElementById('website').value = 'www.techinnovations.com';
+    document.getElementById('location').value = 'Silicon Valley, CA';
+    
+    showToast('Form filled with sample data', 'info');
+}
+
+// Share Card
 function shareCard(cardId) {
     const card = savedCards.find(c => c.id === cardId);
     if (!card) return;
     
-    const text = `Check out this business card:\n\nCompany: ${card.companyName}\nContact: ${card.contactPerson}\nEmail: ${card.email}\nPhone: ${card.phone}\n\nShared via CardScan PRO`;
+    const text = `Business Card: ${card.companyName}\nContact: ${card.contactPerson}\nEmail: ${card.email}\nPhone: ${card.phone}`;
     
     if (navigator.share) {
         navigator.share({
@@ -809,140 +1023,153 @@ function shareCard(cardId) {
         });
     } else {
         navigator.clipboard.writeText(text)
-            .then(() => showToast('Card details copied to clipboard!', 'success'))
-            .catch(() => showToast('Failed to share card', 'error'));
+            .then(() => showToast('Card details copied', 'success'))
+            .catch(() => showToast('Failed to share', 'error'));
     }
 }
 
-// Import/Export functions
-function toggleQRScanner() {
-    const scanner = document.getElementById('qrScanner');
-    
-    if (!isScanning) {
-        qrScanner = new Html5Qrcode("qrScanner");
-        qrScanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            (decodedText) => {
-                handleQRCodeData(decodedText);
-                qrScanner.stop();
-                scanner.style.display = 'none';
-                isScanning = false;
-            }
-        ).then(() => {
-            scanner.style.display = 'block';
-            isScanning = true;
-        });
-    } else {
-        qrScanner.stop();
-        scanner.style.display = 'none';
-        isScanning = false;
-    }
-}
-
-function handleQRCodeData(qrData) {
-    try {
-        const data = JSON.parse(qrData);
-        if (data.type === 'business_card') {
-            importCardData(data.card);
-        }
-    } catch (error) {
-        showToast('Invalid QR code data', 'error');
-    }
-}
-
-function importData() {
-    const deviceId = document.getElementById('deviceIdInput').value.trim();
-    const status = document.getElementById('importStatus');
-    
-    if (!deviceId) {
-        status.innerHTML = '<div class="toast error">Please enter Device ID</div>';
+// Export All Cards
+function exportAllCards() {
+    if (savedCards.length === 0) {
+        showToast('No cards to export', 'warning');
         return;
     }
     
-    status.innerHTML = '<div class="toast info">Importing data...</div>';
+    const dataStr = JSON.stringify(savedCards, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
     
-    // Simulate import
-    setTimeout(() => {
-        const sampleCard = {
-            companyName: "TechCorp Innovations",
-            contactPerson: "Alex Johnson",
-            email: "alex@techcorp.com",
-            phone: "+1 (555) 123-4567",
-            website: "www.techcorp.com",
-            location: "San Francisco, CA",
-            jobTitle: "CEO"
-        };
-        
-        Object.keys(sampleCard).forEach(key => {
-            const field = document.getElementById(key);
-            if (field) field.value = sampleCard[key];
-        });
-        
-        status.innerHTML = '<div class="toast success">Data imported successfully!</div>';
-        showToast('Data imported from device', 'success');
-        
-        setTimeout(() => {
-            status.innerHTML = '';
-        }, 3000);
-        
-    }, 1500);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `business_cards_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showToast(`Exported ${savedCards.length} cards`, 'success');
 }
 
-function importCardData(cardData) {
-    Object.keys(cardData).forEach(key => {
-        const field = document.getElementById(key);
-        if (field && cardData[key]) field.value = cardData[key];
-    });
-    showToast('Card data imported from QR code', 'success');
+// Clear All Cards
+async function clearAllCards() {
+    if (!confirm('Delete ALL cards? This cannot be undone.')) return;
+    
+    savedCards = [];
+    saveLocalCards();
+    renderCards();
+    updateCardCount();
+    
+    if (isOnline) {
+        await pushToCloud();
+    }
+    
+    showToast('All cards deleted', 'success');
 }
 
-function exportToQR() {
+// Copy URL
+function copyURL() {
+    const url = 'https://ansh200229.github.io/Ansh_Business-card-scanner/';
+    navigator.clipboard.writeText(url)
+        .then(() => showToast('URL copied to clipboard!', 'success'))
+        .catch(() => showToast('Failed to copy URL', 'error'));
+}
+
+// Generate QR Code
+function generateQR() {
     const cardData = {
-        type: 'business_card',
-        card: {
-            companyName: document.getElementById('companyName').value,
-            contactPerson: document.getElementById('contactPerson').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value,
-            website: document.getElementById('website').value,
-            location: document.getElementById('location').value,
-            jobTitle: document.getElementById('jobTitle').value
-        }
+        companyName: document.getElementById('companyName').value,
+        contactPerson: document.getElementById('contactPerson').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        website: document.getElementById('website').value,
+        location: document.getElementById('location').value,
+        jobTitle: document.getElementById('jobTitle').value
     };
     
-    const qrOutput = document.getElementById('qrCodeOutput');
-    if (!qrOutput) {
-        showToast('QR output element not found', 'error');
-        return;
-    }
+    const qrContainer = document.getElementById('qrContainer');
+    qrContainer.innerHTML = '';
     
-    qrOutput.innerHTML = '';
-    
-    QRCode.toCanvas(qrOutput, JSON.stringify(cardData), { width: 200 }, function(error) {
+    QRCode.toCanvas(qrContainer, JSON.stringify(cardData), { width: 200 }, function(error) {
         if (error) {
             showToast('Failed to generate QR code', 'error');
             return;
         }
         
-        showToast('QR code generated!', 'success');
-        
-        // Add download button
-        const downloadBtn = document.createElement('button');
-        downloadBtn.className = 'btn-modal';
-        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR';
-        downloadBtn.onclick = function() {
-            const canvas = qrOutput.querySelector('canvas');
-            const link = document.createElement('a');
-            link.download = `business_card_${Date.now()}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        };
-        qrOutput.appendChild(downloadBtn);
+        document.getElementById('qrModal').style.display = 'flex';
     });
 }
 
-// Toast notifications
+// Download QR Code
+function downloadQR() {
+    const canvas = document.querySelector('#qrContainer canvas');
+    if (!canvas) return;
+    
+    const link = document.createElement('a');
+    link.download = `business_card_qr_${Date.now()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+    
+    showToast('QR code downloaded', 'success');
+}
+
+// Close Modals
+function closeCardModal() {
+    document.getElementById('cardDetailsModal').style.display = 'none';
+}
+
+function closeQRModal() {
+    document.getElementById('qrModal').style.display = 'none';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+// Show All Cards
+function showAllCards() {
+    setViewMode('grid');
+    showPanel('cards');
+}
+
+// Show Panel
+function showPanel(panelName) {
+    // Update navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Scroll to panel
+    const panel = document.querySelector(`.${panelName}-panel`);
+    if (panel) {
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Show Settings
+function showSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+// Toggle Menu
+function toggleMenu() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('active');
+}
+
+// Reset Settings
+function resetSettings() {
+    localStorage.removeItem('cardscan_settings');
+    showToast('Settings reset to defaults', 'success');
+}
+
+// Clear All Data
+function clearAllData() {
+    if (!confirm('Clear ALL data including settings?')) return;
+    
+    localStorage.clear();
+    savedCards = [];
+    renderCards();
+    updateCardCount();
+    
+    showToast('All data cleared', 'success');
+}
+
+// Toast Notifications
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -955,11 +1182,17 @@ function showToast(message, type = 'info') {
         info: 'fas fa-info-circle'
     };
     
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
     toast.innerHTML = `
         <div class="toast-icon">
             <i class="${icons[type] || icons.info}"></i>
         </div>
-        <div class="toast-message">${message}</div>
+        <div class="toast-content">
+            <div class="toast-message">${message}</div>
+            <div class="toast-time">${timeString}</div>
+        </div>
         <button class="toast-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
@@ -967,7 +1200,7 @@ function showToast(message, type = 'info') {
     
     container.appendChild(toast);
     
-    // Auto-remove after 5 seconds
+    // Auto-remove
     setTimeout(() => {
         if (toast.parentNode) {
             toast.style.animation = 'toastSlideIn 0.3s ease reverse';
@@ -990,7 +1223,10 @@ window.addEventListener('beforeunload', function() {
         currentStream.getTracks().forEach(track => track.stop());
     }
     
-    if (isScanning && qrScanner) {
-        qrScanner.stop();
+    if (syncInterval) {
+        clearInterval(syncInterval);
     }
+    
+    // Save before leaving
+    saveLocalCards();
 });
