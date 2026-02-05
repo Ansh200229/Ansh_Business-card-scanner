@@ -69,17 +69,200 @@ body {
 }
 
 /* Left Panel */
-.left-panel .card-form {
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Scanner Section */
+.scanner-section {
     background: white;
     border-radius: 15px;
-    padding: 30px;
+    padding: 25px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    height: fit-content;
+}
+
+.scanner-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scanner-section h2 i {
+    color: #667eea;
+}
+
+.scanner-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.scanner-btn {
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: white;
+    color: #666;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.scanner-btn.active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.scanner-btn:hover:not(.active) {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.image-preview {
+    width: 100%;
+    height: 200px;
+    background: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.preview-placeholder {
+    text-align: center;
+    color: #999;
+}
+
+.preview-placeholder i {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.preview-placeholder p {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.preview-placeholder small {
+    font-size: 12px;
+}
+
+#previewImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.scan-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-scan, .btn-clear-scan {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-scan {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-scan:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-scan:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-clear-scan {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.btn-clear-scan:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* OCR Progress */
+.ocr-progress {
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.progress-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4cd964, #2ecc71);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#progressPercent {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Form Section */
+.card-form {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .card-form h2 {
     color: #333;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     font-size: 22px;
     display: flex;
     align-items: center;
@@ -91,7 +274,7 @@ body {
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .form-group label {
@@ -130,7 +313,7 @@ body {
 .form-buttons {
     display: flex;
     gap: 15px;
-    margin-top: 30px;
+    margin-top: 20px;
 }
 
 .btn-save, .btn-clear {
@@ -355,10 +538,30 @@ body {
     width: 20px;
 }
 
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.card-date {
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-date i {
+    font-size: 14px;
+}
+
 .card-actions {
     display: flex;
     gap: 10px;
-    justify-content: flex-end;
 }
 
 .btn-edit, .btn-delete {
@@ -389,6 +592,125 @@ body {
 
 .btn-delete:hover {
     background: #ffcdd2;
+}
+
+/* Camera Modal */
+#cameraModal .modal-content {
+    max-width: 500px;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#cameraView {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.scan-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 60%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.corner {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-color: #4cd964;
+    border-style: solid;
+}
+
+.corner.top-left {
+    top: -2px;
+    left: -2px;
+    border-width: 4px 0 0 4px;
+    border-radius: 10px 0 0 0;
+}
+
+.corner.top-right {
+    top: -2px;
+    right: -2px;
+    border-width: 4px 4px 0 0;
+    border-radius: 0 10px 0 0;
+}
+
+.corner.bottom-left {
+    bottom: -2px;
+    left: -2px;
+    border-width: 0 0 4px 4px;
+    border-radius: 0 0 0 10px;
+}
+
+.corner.bottom-right {
+    bottom: -2px;
+    right: -2px;
+    border-width: 0 4px 4px 0;
+    border-radius: 0 0 10px 0;
+}
+
+.camera-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-capture, .btn-switch {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-capture {
+    background: linear-gradient(135deg, #4cd964, #2ecc71);
+    color: white;
+}
+
+.btn-capture:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 217, 100, 0.4);
+}
+
+.btn-switch {
+    background: #667eea;
+    color: white;
+    flex: none;
+    width: 60px;
+}
+
+.btn-switch:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
 }
 
 /* Modal */
@@ -535,7 +857,7 @@ body {
         grid-template-columns: 1fr;
     }
     
-    .left-panel .card-form {
+    .left-panel {
         max-width: 600px;
         margin: 0 auto;
     }
@@ -559,12 +881,12 @@ body {
         padding: 8px 15px;
     }
     
-    .card-form {
+    .scanner-section, .card-form, .search-section {
         padding: 20px;
     }
     
-    .search-section {
-        padding: 20px;
+    .scanner-options {
+        grid-template-columns: 1fr;
     }
     
     .cards-container {
@@ -577,6 +899,10 @@ body {
     
     .modal-content {
         margin: 10px;
+    }
+    
+    .camera-container {
+        height: 300px;
     }
 }
 
@@ -593,19 +919,19 @@ body {
         font-size: 18px;
     }
     
-    .form-buttons {
+    .scan-controls, .form-buttons, .modal-buttons {
         flex-direction: column;
     }
     
-    .btn-save, .btn-clear {
+    .btn-scan, .btn-clear-scan, .btn-save, .btn-clear, .btn-update, .btn-cancel {
         width: 100%;
     }
     
-    .modal-buttons {
+    .camera-controls {
         flex-direction: column;
     }
     
-    .btn-update, .btn-cancel {
+    .btn-capture, .btn-switch {
         width: 100%;
     }
 }
