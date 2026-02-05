@@ -31,11 +31,11 @@
                     <h2><i class="fas fa-camera"></i> Scan Card</h2>
                     
                     <div class="scanner-options">
-                        <button class="scanner-btn active" onclick="openCamera()">
+                        <button class="scanner-btn active" id="cameraBtn" onclick="openCamera()">
                             <i class="fas fa-camera"></i>
                             <span>Use Camera</span>
                         </button>
-                        <button class="scanner-btn" onclick="openFilePicker()">
+                        <button class="scanner-btn" id="uploadBtn" onclick="openFilePicker()">
                             <i class="fas fa-upload"></i>
                             <span>Upload Image</span>
                         </button>
@@ -52,22 +52,22 @@
                     </div>
                     
                     <div class="scan-controls">
-                        <button class="btn-scan" onclick="startOCR()" id="scanBtn" disabled>
-                            <i class="fas fa-robot"></i> Scan Text
+                        <button class="btn-scan" onclick="scanText()" id="scanBtn" disabled>
+                            <i class="fas fa-robot"></i> Extract Text
                         </button>
                         <button class="btn-clear-scan" onclick="clearImage()">
                             <i class="fas fa-times"></i> Clear
                         </button>
                     </div>
                     
-                    <div class="ocr-progress" id="ocrProgress" style="display: none;">
-                        <div class="progress-text">
-                            <i class="fas fa-brain"></i> Scanning...
+                    <div class="ocr-results" id="ocrResults" style="display: none;">
+                        <h3><i class="fas fa-robot"></i> Extracted Text</h3>
+                        <div class="extracted-text" id="extractedText">
+                            Text will appear here...
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <span id="progressPercent">0%</span>
+                        <button class="btn-apply" onclick="applyOCRResults()">
+                            <i class="fas fa-magic"></i> Auto-Fill Form
+                        </button>
                     </div>
                 </div>
 
@@ -148,7 +148,7 @@
     <div id="cameraModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-camera"></i> Take Photo</h3>
+                <h3><i class="fas fa-camera"></i> Camera Scanner</h3>
                 <button class="modal-close" onclick="closeCamera()">&times;</button>
             </div>
             <div class="modal-body">
@@ -165,10 +165,10 @@
                 </div>
                 <div class="camera-controls">
                     <button class="btn-capture" onclick="capturePhoto()">
-                        <i class="fas fa-camera"></i> Capture
+                        <i class="fas fa-camera"></i> Capture Photo
                     </button>
                     <button class="btn-switch" onclick="switchCamera()" id="switchBtn">
-                        <i class="fas fa-sync-alt"></i>
+                        <i class="fas fa-sync-alt"></i> Switch Camera
                     </button>
                 </div>
             </div>
@@ -226,8 +226,7 @@
     <!-- Toast Notification -->
     <div id="toast"></div>
 
-    <!-- Tesseract.js -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- Simple OCR using HTML5 Canvas and Text Detection -->
     <script src="script.js"></script>
 </body>
 </html>
