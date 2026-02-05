@@ -1,45 +1,69 @@
-// Business Card Scanner with Camera and OCR
+// Business Card Scanner with Working Camera and OCR
 
 let cards = [];
 let currentEditIndex = -1;
 let cameraStream = null;
-let currentCamera = 'user'; // 'user' for front, 'environment' for back
+let currentCamera = 'environment'; // Start with back camera
 let ocrWorker = null;
 let currentImageData = null;
+let extractedText = '';
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     loadCards();
     updateCardCount();
     displayCards();
+    
+    // Initialize scanner buttons
+    initScannerButtons();
 });
+
+// Initialize scanner button states
+function initScannerButtons() {
+    const cameraBtn = document.getElementById('cameraBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    cameraBtn.addEventListener('click', function() {
+        cameraBtn.classList.add('active');
+        uploadBtn.classList.remove('active');
+    });
+    
+    uploadBtn.addEventListener('click', function() {
+        uploadBtn.classList.add('active');
+        cameraBtn.classList.remove('active');
+    });
+}
 
 // Load cards from local storage
 function loadCards() {
-    const saved = localStorage.getItem('businessCards');
-    if (saved) {
-        cards = JSON.parse(saved);
+    try {
+        const saved = localStorage.getItem('businessCards');
+        if (saved) {
+            cards = JSON.parse(saved);
+            console.log(`Loaded ${cards.length} cards from storage`);
+        }
+    } catch (error) {
+        console.error('Error loading cards:', error);
+        cards = [];
     }
 }
 
 // Save cards to local storage
 function saveCards() {
-    localStorage.setItem('businessCards', JSON.stringify(cards));
-}
-
-// Camera Functions
-function openCamera() {
-    document.getElementById('cameraModal').style.display = 'flex';
-    startCamera();
-}
-
-async function startCamera() {
     try {
-        // Stop any existing stream
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-        }
-        
+        localStorage.setItem('businessCards', JSON.stringify(cards));
+        console.log(`Saved ${cards.length} cards to storage`);
+    } catch (error) {
+        console.error('Error saving cards:', error);
+        showToast('Error saving card. Please try again.', 'error');
+    }
+}
+
+// ==================== CAMERA FUNCTIONS ====================
+
+async function openCamera() {
+    console.log('Opening camera...');
+    try {
         // Request camera access
         cameraStream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -50,24 +74,48 @@ async function startCamera() {
             audio: false
         });
         
+        console.log('Camera access granted');
+        
         // Display camera feed
         const cameraView = document.getElementById('cameraView');
         cameraView.srcObject = cameraStream;
         
+        // Show modal
+        document.getElementById('cameraModal').style.display = 'flex';
+        
     } catch (error) {
         console.error('Camera error:', error);
-        showToast('Cannot access camera. Please check permissions.', 'error');
-        closeCamera();
+        
+        if (error.name === 'NotAllowedError') {
+            showToast('Camera access denied. Please allow camera permission.', 'error');
+        } else if (error.name === 'NotFoundError') {
+            showToast('No camera found on this device.', 'error');
+        } else {
+            showToast('Cannot access camera. Please try again.', 'error');
+        }
     }
 }
 
 function switchCamera() {
-    currentCamera = currentCamera === 'user' ? 'environment' : 'user';
-    startCamera();
+    console.log('Switching camera...');
+    currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+    
+    if (cameraStream) {
+        // Stop current stream
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    
+    // Restart camera with new facing mode
+    openCamera();
 }
 
 function capturePhoto() {
-    if (!cameraStream) return;
+    console.log('Capturing photo...');
+    if (!cameraStream) {
+        showToast('Camera not ready. Please try again.', 'error');
+        return;
+    }
     
     const cameraView = document.getElementById('cameraView');
     const canvas = document.createElement('canvas');
@@ -80,7 +128,7 @@ function capturePhoto() {
     // Draw current video frame to canvas
     context.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
     
-    // Convert to data URL
+    // Convert to data URL (JPEG format)
     currentImageData = canvas.toDataURL('image/jpeg', 0.9);
     
     // Update preview
@@ -96,6 +144,7 @@ function capturePhoto() {
 }
 
 function closeCamera() {
+    console.log('Closing camera...');
     document.getElementById('cameraModal').style.display = 'none';
     
     // Stop camera stream
@@ -105,26 +154,48 @@ function closeCamera() {
     }
 }
 
-// Image Upload
+// ==================== IMAGE UPLOAD FUNCTIONS ====================
+
 function openFilePicker() {
+    console.log('Opening file picker...');
     document.getElementById('imageInput').click();
 }
 
 function handleImageUpload(event) {
+    console.log('Handling image upload...');
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+        console.log('No file selected');
+        return;
+    }
+    
+    console.log('File selected:', file.name, file.type, file.size);
+    
+    // Check if file is an image
+    if (!file.type.match('image.*')) {
+        showToast('Please select an image file.', 'error');
+        return;
+    }
     
     const reader = new FileReader();
     reader.onload = function(e) {
+        console.log('File read successfully');
         currentImageData = e.target.result;
         updateImagePreview(currentImageData);
         document.getElementById('scanBtn').disabled = false;
         showToast('Image uploaded successfully!', 'success');
     };
+    
+    reader.onerror = function() {
+        console.error('Error reading file');
+        showToast('Error reading image file.', 'error');
+    };
+    
     reader.readAsDataURL(file);
 }
 
 function updateImagePreview(imageData) {
+    console.log('Updating image preview...');
     const preview = document.getElementById('previewImage');
     const placeholder = document.querySelector('.preview-placeholder');
     
@@ -134,6 +205,7 @@ function updateImagePreview(imageData) {
 }
 
 function clearImage() {
+    console.log('Clearing image...');
     const preview = document.getElementById('previewImage');
     const placeholder = document.querySelector('.preview-placeholder');
     
@@ -142,10 +214,15 @@ function clearImage() {
     placeholder.style.display = 'block';
     currentImageData = null;
     document.getElementById('scanBtn').disabled = true;
+    
+    // Hide OCR results
+    document.getElementById('ocrResults').style.display = 'none';
 }
 
-// OCR Functions
+// ==================== OCR FUNCTIONS ====================
+
 async function startOCR() {
+    console.log('Starting OCR...');
     if (!currentImageData) {
         showToast('Please capture or upload an image first', 'error');
         return;
@@ -153,27 +230,57 @@ async function startOCR() {
     
     const scanBtn = document.getElementById('scanBtn');
     const progress = document.getElementById('ocrProgress');
+    const results = document.getElementById('ocrResults');
     
     // Disable scan button and show progress
     scanBtn.disabled = true;
     progress.style.display = 'block';
+    results.style.display = 'none';
+    
+    // Reset progress bar
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressPercent').textContent = '0%';
     
     try {
-        // Initialize Tesseract worker
-        if (!ocrWorker) {
-            ocrWorker = await Tesseract.createWorker('eng', 1, {
-                logger: m => updateOCRProgress(m)
-            });
-        }
+        console.log('Initializing OCR worker...');
         
-        // Perform OCR
-        const result = await ocrWorker.recognize(currentImageData);
+        // Initialize Tesseract worker with better configuration
+        ocrWorker = await Tesseract.createWorker('eng', 1, {
+            logger: m => {
+                console.log('OCR Progress:', m);
+                updateOCRProgress(m);
+            },
+            errorHandler: err => {
+                console.error('OCR Error:', err);
+                showToast('OCR processing error. Please try again.', 'error');
+            }
+        });
         
-        // Process OCR results
-        processOCRResults(result.data.text);
+        // Set worker parameters for better recognition
+        await ocrWorker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+            preserve_interword_spaces: '1',
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-@()/\\:& '
+        });
         
-        // Hide progress
+        console.log('Performing OCR...');
+        
+        // Perform OCR with better configuration
+        const result = await ocrWorker.recognize(currentImageData, {
+            rectangle: { top: 0, left: 0, width: 100, height: 100 }
+        });
+        
+        console.log('OCR Result:', result.data);
+        
+        // Store extracted text
+        extractedText = result.data.text;
+        
+        // Display extracted text
+        document.getElementById('extractedText').textContent = extractedText;
+        
+        // Hide progress and show results
         progress.style.display = 'none';
+        results.style.display = 'block';
         scanBtn.disabled = false;
         
         showToast('Text extracted successfully!', 'success');
@@ -182,7 +289,12 @@ async function startOCR() {
         console.error('OCR Error:', error);
         progress.style.display = 'none';
         scanBtn.disabled = false;
-        showToast('OCR failed. Please try again.', 'error');
+        
+        if (error.message.includes('network')) {
+            showToast('Network error. Please check your internet connection.', 'error');
+        } else {
+            showToast('OCR failed. Please try again with a clearer image.', 'error');
+        }
     }
 }
 
@@ -194,89 +306,105 @@ function updateOCRProgress(message) {
     }
 }
 
-function processOCRResults(text) {
-    console.log('OCR Text:', text);
+function applyOCRResults() {
+    console.log('Applying OCR results...');
     
-    // Split text into lines
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    if (!extractedText) {
+        showToast('No text extracted. Please scan again.', 'error');
+        return;
+    }
     
-    // Simple parsing logic (you can improve this)
+    // Simple parsing logic - you can improve this
+    const lines = extractedText.split('\n').filter(line => line.trim().length > 0);
+    console.log('Parsing lines:', lines);
+    
     let companyName = '';
     let contactPerson = '';
     let jobTitle = '';
     let email = '';
     let phone = '';
     let website = '';
-    let address = '';
+    let addressLines = [];
     
-    // Look for email
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
-    for (let line of lines) {
-        const emailMatch = line.match(emailRegex);
-        if (emailMatch) {
-            email = emailMatch[0];
-            break;
+    // Patterns for detection
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
+    const websiteRegex = /(www\.|https?:\/\/)[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/g;
+    const jobTitleRegex = /(CEO|CTO|CFO|COO|Director|Manager|Engineer|Developer|Designer|Analyst|President|Vice President|Head of|Lead|Specialist)/i;
+    
+    // Find email
+    const emailMatches = extractedText.match(emailRegex);
+    if (emailMatches && emailMatches.length > 0) {
+        email = emailMatches[0];
+        console.log('Found email:', email);
+    }
+    
+    // Find phone
+    const phoneMatches = extractedText.match(phoneRegex);
+    if (phoneMatches && phoneMatches.length > 0) {
+        phone = phoneMatches[0];
+        console.log('Found phone:', phone);
+    }
+    
+    // Find website
+    const websiteMatches = extractedText.match(websiteRegex);
+    if (websiteMatches && websiteMatches.length > 0) {
+        website = websiteMatches[0];
+        console.log('Found website:', website);
+    }
+    
+    // Analyze each line
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // First substantial line might be company name
+        if (!companyName && line.length > 2 && line.length < 50) {
+            companyName = line;
+            console.log('Possible company name:', companyName);
         }
-    }
-    
-    // Look for phone
-    const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-    for (let line of lines) {
-        const phoneMatch = line.match(phoneRegex);
-        if (phoneMatch) {
-            phone = phoneMatch[0];
-            break;
+        
+        // Look for job titles
+        if (!jobTitle && jobTitleRegex.test(line)) {
+            jobTitle = line;
+            console.log('Possible job title:', jobTitle);
         }
-    }
-    
-    // Look for website
-    const websiteRegex = /(www\.|https?:\/\/)[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/;
-    for (let line of lines) {
-        const websiteMatch = line.match(websiteRegex);
-        if (websiteMatch) {
-            website = websiteMatch[0];
-            break;
-        }
-    }
-    
-    // Simple heuristics for other fields
-    // First substantial line might be company name
-    if (lines.length > 0 && lines[0].trim().length > 2 && lines[0].trim().length < 50) {
-        companyName = lines[0].trim();
-    }
-    
-    // Look for job titles
-    const jobTitleRegex = /(CEO|CTO|CFO|COO|Director|Manager|Engineer|Developer|Designer|Analyst|President|Vice President)/i;
-    for (let line of lines) {
-        if (jobTitleRegex.test(line)) {
-            jobTitle = line.trim();
-            break;
-        }
-    }
-    
-    // Look for names (simple heuristic - lines with 2-3 words)
-    for (let line of lines) {
-        const words = line.trim().split(' ');
-        if (words.length >= 2 && words.length <= 3) {
-            if (!contactPerson && !jobTitleRegex.test(line)) {
-                contactPerson = line.trim();
+        
+        // Look for names (lines with 2-3 words, capitalized)
+        if (!contactPerson && line.split(' ').length >= 2 && line.split(' ').length <= 3) {
+            const words = line.split(' ');
+            if (words.every(word => word[0] === word[0].toUpperCase())) {
+                contactPerson = line;
+                console.log('Possible contact person:', contactPerson);
             }
         }
+        
+        // Address lines (lines that don't match other patterns)
+        if (!emailRegex.test(line) && !phoneRegex.test(line) && !websiteRegex.test(line) && 
+            !jobTitleRegex.test(line) && line.length > 5) {
+            addressLines.push(line);
+        }
     }
     
-    // Fill form with extracted data
-    document.getElementById('companyName').value = companyName;
-    document.getElementById('contactPerson').value = contactPerson;
-    document.getElementById('jobTitle').value = jobTitle;
-    document.getElementById('email').value = email;
-    document.getElementById('phone').value = phone;
-    document.getElementById('website').value = website;
+    // Join address lines
+    const address = addressLines.join(', ');
     
-    showToast('Form auto-filled with extracted data. Please verify.', 'info');
+    // Fill form with detected information
+    document.getElementById('companyName').value = companyName || '';
+    document.getElementById('contactPerson').value = contactPerson || '';
+    document.getElementById('jobTitle').value = jobTitle || '';
+    document.getElementById('email').value = email || '';
+    document.getElementById('phone').value = phone || '';
+    document.getElementById('website').value = website || '';
+    document.getElementById('address').value = address || '';
+    
+    showToast('Form auto-filled with extracted data. Please verify and edit.', 'info');
 }
 
-// Card Management Functions
+// ==================== CARD MANAGEMENT FUNCTIONS ====================
+
 function saveCard() {
+    console.log('Saving card...');
+    
     // Get form values
     const companyName = document.getElementById('companyName').value.trim();
     const contactPerson = document.getElementById('contactPerson').value.trim();
@@ -301,6 +429,8 @@ function saveCard() {
         imageData: currentImageData // Save the scanned image
     };
     
+    console.log('Card created:', card);
+    
     // Add to cards array
     cards.push(card);
     
@@ -320,6 +450,7 @@ function saveCard() {
 }
 
 function clearForm() {
+    console.log('Clearing form...');
     document.getElementById('companyName').value = '';
     document.getElementById('contactPerson').value = '';
     document.getElementById('jobTitle').value = '';
@@ -331,6 +462,7 @@ function clearForm() {
 
 // Display all cards
 function displayCards(filteredCards = null) {
+    console.log('Displaying cards...');
     const cardsContainer = document.getElementById('cardsContainer');
     const cardsToDisplay = filteredCards || cards;
     
@@ -361,6 +493,8 @@ function displayCards(filteredCards = null) {
         return;
     }
     
+    console.log(`Displaying ${cardsToDisplay.length} cards`);
+    
     // Display cards
     cardsToDisplay.forEach((card, index) => {
         const cardElement = createCardElement(card, index);
@@ -390,8 +524,11 @@ function createCardElement(card, index) {
     const imagePreview = card.imageData ? `
         <div class="card-image" style="margin-top: 15px;">
             <small><i class="fas fa-image"></i> Scanned Image:</small>
-            <img src="${card.imageData}" alt="Scanned card" style="max-width: 100px; max-height: 80px; border-radius: 5px; margin-top: 5px; cursor: pointer;" 
-                 onclick="showImage('${card.imageData}')">
+            <div style="margin-top: 5px;">
+                <img src="${card.imageData}" alt="Scanned card" 
+                     style="max-width: 100px; max-height: 80px; border-radius: 5px; cursor: pointer; border: 1px solid #ddd;" 
+                     onclick="showImage('${card.imageData}')">
+            </div>
         </div>
     ` : '';
     
@@ -458,36 +595,38 @@ function createCardElement(card, index) {
 }
 
 function showImage(imageData) {
-    const img = new Image();
-    img.src = imageData;
-    img.style.maxWidth = '90vw';
-    img.style.maxHeight = '90vh';
-    img.style.borderRadius = '10px';
-    
     const modal = document.createElement('div');
     modal.style.position = 'fixed';
     modal.style.top = '0';
     modal.style.left = '0';
     modal.style.width = '100%';
     modal.style.height = '100%';
-    modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
     modal.style.display = 'flex';
     modal.style.alignItems = 'center';
     modal.style.justifyContent = 'center';
     modal.style.zIndex = '2000';
     modal.style.cursor = 'pointer';
     
-    modal.onclick = function() {
-        document.body.removeChild(modal);
-    };
+    const img = new Image();
+    img.src = imageData;
+    img.style.maxWidth = '90vw';
+    img.style.maxHeight = '90vh';
+    img.style.borderRadius = '10px';
+    img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
     
     modal.appendChild(img);
     document.body.appendChild(modal);
+    
+    modal.onclick = function() {
+        document.body.removeChild(modal);
+    };
 }
 
 // Filter cards based on search input
 function filterCards() {
     const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+    console.log('Searching for:', searchInput);
     
     if (!searchInput) {
         displayCards();
@@ -506,11 +645,13 @@ function filterCards() {
         );
     });
     
+    console.log(`Found ${filteredCards.length} matching cards`);
     displayCards(filteredCards);
 }
 
 // Edit card
 function editCard(index) {
+    console.log('Editing card at index:', index);
     const card = cards[index];
     currentEditIndex = index;
     
@@ -529,7 +670,12 @@ function editCard(index) {
 
 // Update card
 function updateCard() {
-    if (currentEditIndex === -1) return;
+    if (currentEditIndex === -1) {
+        console.error('No card selected for editing');
+        return;
+    }
+    
+    console.log('Updating card at index:', currentEditIndex);
     
     // Get updated values
     const card = cards[currentEditIndex];
@@ -555,12 +701,15 @@ function updateCard() {
 }
 
 function closeEditModal() {
+    console.log('Closing edit modal');
     document.getElementById('editModal').style.display = 'none';
     currentEditIndex = -1;
 }
 
 // Delete card
 function deleteCard(index) {
+    console.log('Deleting card at index:', index);
+    
     if (!confirm('Are you sure you want to delete this card?')) {
         return;
     }
@@ -584,8 +733,11 @@ function updateCardCount() {
     document.getElementById('totalCards').textContent = cards.length;
 }
 
+// ==================== UTILITY FUNCTIONS ====================
+
 // Show toast notification
 function showToast(message, type = 'info') {
+    console.log(`Toast (${type}): ${message}`);
     const toast = document.getElementById('toast');
     
     // Set message and style
@@ -611,6 +763,8 @@ function showToast(message, type = 'info') {
 
 // Clean up on page unload
 window.addEventListener('beforeunload', function() {
+    console.log('Cleaning up...');
+    
     // Stop camera if active
     if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -619,5 +773,18 @@ window.addEventListener('beforeunload', function() {
     // Terminate OCR worker
     if (ocrWorker) {
         ocrWorker.terminate();
+    }
+});
+
+// Add helper for mobile camera rotation
+window.addEventListener('orientationchange', function() {
+    if (cameraStream) {
+        // Restart camera on orientation change for better mobile support
+        setTimeout(() => {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                openCamera();
+            }
+        }, 300);
     }
 });
