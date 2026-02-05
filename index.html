@@ -6,15 +6,315 @@
     <title>Business Card Scanner</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Inline styles for reliability */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 32px;
+            color: #667eea;
+        }
+        
+        .logo h1 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .card-count {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .panel h2 {
+            color: #333;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .scanner-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .cards-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .card-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .company-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .contact-name {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .card-details {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .ocr-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        #extractedText {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
             <div class="logo">
                 <i class="fas fa-id-card"></i>
-                <h1>Card Scanner</h1>
+                <h1>Business Card Scanner</h1>
             </div>
             <div class="card-count">
                 <i class="fas fa-layer-group"></i>
@@ -22,118 +322,96 @@
             </div>
         </header>
 
-        <!-- Main Content -->
         <div class="main-content">
             <!-- Left Panel - Scanner & Form -->
-            <div class="left-panel">
-                <!-- Scanner Section -->
-                <div class="scanner-section">
-                    <h2><i class="fas fa-camera"></i> Scan Card</h2>
-                    
-                    <div class="scanner-options">
-                        <button class="scanner-btn active" id="cameraBtn" onclick="openCamera()">
-                            <i class="fas fa-camera"></i>
-                            <span>Use Camera</span>
-                        </button>
-                        <button class="scanner-btn" id="uploadBtn" onclick="openFilePicker()">
-                            <i class="fas fa-upload"></i>
-                            <span>Upload Image</span>
-                        </button>
-                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-                    </div>
-                    
-                    <div class="image-preview" id="imagePreview">
-                        <div class="preview-placeholder">
-                            <i class="fas fa-id-card"></i>
-                            <p>No image selected</p>
-                            <small>Use camera or upload image</small>
-                        </div>
-                        <img id="previewImage" style="display: none;">
-                    </div>
-                    
-                    <div class="scan-controls">
-                        <button class="btn-scan" onclick="scanText()" id="scanBtn" disabled>
-                            <i class="fas fa-robot"></i> Extract Text
-                        </button>
-                        <button class="btn-clear-scan" onclick="clearImage()">
-                            <i class="fas fa-times"></i> Clear
-                        </button>
-                    </div>
-                    
-                    <div class="ocr-results" id="ocrResults" style="display: none;">
-                        <h3><i class="fas fa-robot"></i> Extracted Text</h3>
-                        <div class="extracted-text" id="extractedText">
-                            Text will appear here...
-                        </div>
-                        <button class="btn-apply" onclick="applyOCRResults()">
-                            <i class="fas fa-magic"></i> Auto-Fill Form
-                        </button>
-                    </div>
+            <div class="panel">
+                <h2><i class="fas fa-camera"></i> Scan Card</h2>
+                
+                <div class="scanner-controls">
+                    <button class="btn btn-primary" onclick="openCamera()">
+                        <i class="fas fa-camera"></i> Camera
+                    </button>
+                    <button class="btn btn-secondary" onclick="openFilePicker()">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                 </div>
-
-                <!-- Form Section -->
-                <div class="card-form">
-                    <h2><i class="fas fa-edit"></i> Card Details</h2>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-building"></i> Company Name</label>
-                        <input type="text" id="companyName" placeholder="Enter company name">
+                
+                <div class="image-preview" id="imagePreview">
+                    <div style="text-align:center; color:#666;">
+                        <i class="fas fa-id-card" style="font-size:48px; margin-bottom:10px;"></i>
+                        <p>No image selected</p>
+                        <small>Use camera or upload image</small>
                     </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-user-tie"></i> Contact Person</label>
-                        <input type="text" id="contactPerson" placeholder="Enter contact name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-id-badge"></i> Job Title</label>
-                        <input type="text" id="jobTitle" placeholder="Enter job title">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-envelope"></i> Email</label>
-                        <input type="email" id="email" placeholder="Enter email address">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-phone"></i> Phone</label>
-                        <input type="tel" id="phone" placeholder="Enter phone number">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-globe"></i> Website</label>
-                        <input type="text" id="website" placeholder="Enter website">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-map-marker-alt"></i> Address</label>
-                        <textarea id="address" placeholder="Enter address" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-buttons">
-                        <button class="btn-save" onclick="saveCard()">
-                            <i class="fas fa-save"></i> Save Card
-                        </button>
-                        <button class="btn-clear" onclick="clearForm()">
-                            <i class="fas fa-broom"></i> Clear
-                        </button>
-                    </div>
+                    <img id="previewImage" style="display:none;">
+                </div>
+                
+                <button class="btn btn-success" onclick="extractText()" id="scanBtn" disabled style="width:100%; margin-bottom:10px;">
+                    <i class="fas fa-robot"></i> Extract Text
+                </button>
+                
+                <div class="ocr-section" id="ocrSection">
+                    <h3 style="margin-top:0; font-size:16px;"><i class="fas fa-robot"></i> Extracted Text</h3>
+                    <div id="extractedText">Text will appear here...</div>
+                    <button class="btn btn-primary" onclick="autoFillForm()" style="width:100%;">
+                        <i class="fas fa-magic"></i> Auto-Fill Form
+                    </button>
+                </div>
+                
+                <h2 style="margin-top:30px;"><i class="fas fa-edit"></i> Card Details</h2>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-building"></i> Company Name</label>
+                    <input type="text" id="companyName" placeholder="Enter company name">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Contact Person</label>
+                    <input type="text" id="contactPerson" placeholder="Enter contact name">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-id-badge"></i> Job Title</label>
+                    <input type="text" id="jobTitle" placeholder="Enter job title">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="email" placeholder="Enter email address">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone</label>
+                    <input type="tel" id="phone" placeholder="Enter phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-globe"></i> Website</label>
+                    <input type="text" id="website" placeholder="Enter website">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                    <textarea id="address" placeholder="Enter address"></textarea>
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-primary" onclick="saveCard()" style="flex:1;">
+                        <i class="fas fa-save"></i> Save Card
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearForm()" style="flex:1;">
+                        <i class="fas fa-broom"></i> Clear
+                    </button>
                 </div>
             </div>
 
             <!-- Right Panel - Cards List -->
-            <div class="right-panel">
-                <div class="search-section">
-                    <h2><i class="fas fa-th-large"></i> Saved Cards</h2>
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search cards..." oninput="filterCards()">
-                    </div>
-                </div>
-
-                <!-- Cards Container -->
-                <div class="cards-container" id="cardsContainer">
-                    <!-- Cards will be displayed here -->
+            <div class="panel">
+                <h2><i class="fas fa-th-list"></i> Saved Cards</h2>
+                
+                <input type="text" class="search-box" id="searchInput" placeholder="Search cards..." oninput="filterCards()">
+                
+                <div class="cards-list" id="cardsList">
                     <div class="empty-state" id="emptyState">
                         <i class="fas fa-id-card"></i>
                         <h3>No Cards Yet</h3>
@@ -148,27 +426,14 @@
     <div id="cameraModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-camera"></i> Camera Scanner</h3>
+                <h2 style="margin:0;"><i class="fas fa-camera"></i> Camera</h2>
                 <button class="modal-close" onclick="closeCamera()">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="camera-container">
-                    <video id="cameraView" autoplay playsinline></video>
-                    <div class="camera-overlay">
-                        <div class="scan-frame">
-                            <div class="corner top-left"></div>
-                            <div class="corner top-right"></div>
-                            <div class="corner bottom-left"></div>
-                            <div class="corner bottom-right"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="camera-controls">
-                    <button class="btn-capture" onclick="capturePhoto()">
+            <div style="text-align:center;">
+                <video id="cameraView" autoplay playsinline style="width:100%; max-height:400px; border-radius:5px;"></video>
+                <div style="margin-top:20px;">
+                    <button class="btn btn-primary" onclick="capturePhoto()" style="padding:15px 30px;">
                         <i class="fas fa-camera"></i> Capture Photo
-                    </button>
-                    <button class="btn-switch" onclick="switchCamera()" id="switchBtn">
-                        <i class="fas fa-sync-alt"></i> Switch Camera
                     </button>
                 </div>
             </div>
@@ -179,46 +444,44 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Edit Card</h3>
+                <h2 style="margin:0;"><i class="fas fa-edit"></i> Edit Card</h2>
                 <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Company Name</label>
-                    <input type="text" id="editCompanyName">
-                </div>
-                <div class="form-group">
-                    <label>Contact Person</label>
-                    <input type="text" id="editContactPerson">
-                </div>
-                <div class="form-group">
-                    <label>Job Title</label>
-                    <input type="text" id="editJobTitle">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="editEmail">
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="editPhone">
-                </div>
-                <div class="form-group">
-                    <label>Website</label>
-                    <input type="text" id="editWebsite">
-                </div>
-                <div class="form-group">
-                    <label>Address</label>
-                    <textarea id="editAddress" rows="3"></textarea>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-update" onclick="updateCard()">
-                        <i class="fas fa-check"></i> Update
-                    </button>
-                    <button class="btn-cancel" onclick="closeEditModal()">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
+            <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" id="editCompanyName">
+            </div>
+            <div class="form-group">
+                <label>Contact Person</label>
+                <input type="text" id="editContactPerson">
+            </div>
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" id="editJobTitle">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="editEmail">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="editPhone">
+            </div>
+            <div class="form-group">
+                <label>Website</label>
+                <input type="text" id="editWebsite">
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <textarea id="editAddress"></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" onclick="updateCard()" style="flex:1;">
+                    <i class="fas fa-check"></i> Update
+                </button>
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex:1;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -226,7 +489,552 @@
     <!-- Toast Notification -->
     <div id="toast"></div>
 
-    <!-- Simple OCR using HTML5 Canvas and Text Detection -->
-    <script src="script.js"></script>
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        let cards = [];
+        let currentEditIndex = -1;
+        let cameraStream = null;
+        let currentImageData = null;
+        let extractedText = '';
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCards();
+            updateCardCount();
+            displayCards();
+            
+            // Check for camera support
+            checkCameraSupport();
+            
+            showToast('Business Card Scanner Ready!', 'success');
+        });
+
+        function checkCameraSupport() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn('Camera not supported in this browser');
+            }
+        }
+
+        // ==================== CAMERA FUNCTIONS ====================
+        async function openCamera() {
+            try {
+                // Check if browser supports getUserMedia
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showToast('Camera not supported in this browser. Please upload an image instead.', 'error');
+                    return;
+                }
+                
+                // Request camera access
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                });
+                
+                // Display camera feed
+                const cameraView = document.getElementById('cameraView');
+                cameraView.srcObject = cameraStream;
+                
+                // Show modal
+                document.getElementById('cameraModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                if (error.name === 'NotAllowedError') {
+                    showToast('Camera access denied. Please allow camera permission.', 'error');
+                } else if (error.name === 'NotFoundError') {
+                    showToast('No camera found on this device.', 'error');
+                } else {
+                    showToast('Cannot access camera. Please try uploading an image.', 'error');
+                }
+            }
+        }
+
+        function capturePhoto() {
+            if (!cameraStream) {
+                showToast('Camera not ready', 'error');
+                return;
+            }
+            
+            const cameraView = document.getElementById('cameraView');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            // Set canvas size to video size
+            canvas.width = cameraView.videoWidth;
+            canvas.height = cameraView.videoHeight;
+            
+            // Draw video frame to canvas
+            context.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL (JPEG format)
+            currentImageData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            // Update preview
+            updateImagePreview(currentImageData);
+            
+            // Close camera
+            closeCamera();
+            
+            // Enable scan button
+            document.getElementById('scanBtn').disabled = false;
+            
+            showToast('Photo captured! Click "Extract Text" to scan.', 'success');
+        }
+
+        function closeCamera() {
+            document.getElementById('cameraModal').style.display = 'none';
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+        }
+
+        // ==================== IMAGE UPLOAD ====================
+        function openFilePicker() {
+            document.getElementById('imageInput').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if it's an image
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                updateImagePreview(currentImageData);
+                document.getElementById('scanBtn').disabled = false;
+                showToast('Image uploaded! Click "Extract Text" to scan.', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateImagePreview(imageData) {
+            const preview = document.getElementById('previewImage');
+            const placeholder = document.querySelector('#imagePreview > div');
+            
+            preview.src = imageData;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        // ==================== OCR TEXT EXTRACTION ====================
+        async function extractText() {
+            if (!currentImageData) {
+                showToast('Please capture or upload an image first', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const scanBtn = document.getElementById('scanBtn');
+            scanBtn.disabled = true;
+            scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                // Try to load Tesseract.js
+                await loadTesseract();
+                
+                // Initialize worker
+                const worker = await Tesseract.createWorker('eng');
+                
+                // Perform OCR
+                const result = await worker.recognize(currentImageData);
+                
+                // Store extracted text
+                extractedText = result.data.text;
+                
+                // Display results
+                document.getElementById('extractedText').textContent = extractedText;
+                document.getElementById('ocrSection').style.display = 'block';
+                
+                // Clean up
+                await worker.terminate();
+                
+                showToast('Text extracted successfully!', 'success');
+                
+            } catch (error) {
+                console.error('OCR Error:', error);
+                
+                // Fallback: Show manual input guidance
+                extractedText = "OCR failed. Common business card fields:\n\n" +
+                              "Company Name: [Enter company name]\n" +
+                              "Contact Person: [Enter contact name]\n" +
+                              "Email: example@company.com\n" +
+                              "Phone: (123) 456-7890\n" +
+                              "Website: www.company.com\n\n" +
+                              "Please fill the form manually.";
+                
+                document.getElementById('extractedText').textContent = extractedText;
+                document.getElementById('ocrSection').style.display = 'block';
+                
+                showToast('OCR unavailable. Please enter details manually.', 'warning');
+            } finally {
+                // Reset button
+                scanBtn.disabled = false;
+                scanBtn.innerHTML = '<i class="fas fa-robot"></i> Extract Text';
+            }
+        }
+
+        function loadTesseract() {
+            return new Promise((resolve, reject) => {
+                // Check if Tesseract is already loaded
+                if (typeof Tesseract !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                // Load Tesseract from CDN
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+                script.onload = resolve;
+                script.onerror = () => {
+                    reject(new Error('Failed to load Tesseract.js'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        function autoFillForm() {
+            if (!extractedText) {
+                showToast('No text extracted yet', 'error');
+                return;
+            }
+            
+            // Simple pattern matching for common business card fields
+            const text = extractedText;
+            
+            // Look for email
+            const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+            if (emailMatch) {
+                document.getElementById('email').value = emailMatch[0];
+            }
+            
+            // Look for phone
+            const phoneMatch = text.match(/(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+            if (phoneMatch) {
+                document.getElementById('phone').value = phoneMatch[0];
+            }
+            
+            // Look for website
+            const websiteMatch = text.match(/(www\.|https?:\/\/)[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/);
+            if (websiteMatch) {
+                document.getElementById('website').value = websiteMatch[0];
+            }
+            
+            // Split into lines and use first few lines for company/contact
+            const lines = text.split('\n').filter(line => line.trim().length > 0);
+            
+            if (lines.length > 0) {
+                document.getElementById('companyName').value = lines[0].trim();
+            }
+            
+            if (lines.length > 1) {
+                document.getElementById('contactPerson').value = lines[1].trim();
+            }
+            
+            showToast('Form auto-filled with detected text', 'info');
+        }
+
+        // ==================== CARD MANAGEMENT ====================
+        function loadCards() {
+            try {
+                const saved = localStorage.getItem('businessCards');
+                if (saved) {
+                    cards = JSON.parse(saved);
+                }
+            } catch (error) {
+                console.error('Error loading cards:', error);
+                cards = [];
+            }
+        }
+
+        function saveCards() {
+            try {
+                localStorage.setItem('businessCards', JSON.stringify(cards));
+            } catch (error) {
+                console.error('Error saving cards:', error);
+                showToast('Error saving card', 'error');
+            }
+        }
+
+        function saveCard() {
+            // Get form values
+            const companyName = document.getElementById('companyName').value.trim();
+            const contactPerson = document.getElementById('contactPerson').value.trim();
+            
+            // Check if at least company name or contact person is provided
+            if (!companyName && !contactPerson) {
+                showToast('Please enter at least company name or contact person', 'error');
+                return;
+            }
+            
+            // Create card object
+            const card = {
+                id: Date.now(),
+                companyName: companyName,
+                contactPerson: contactPerson,
+                jobTitle: document.getElementById('jobTitle').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                website: document.getElementById('website').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                createdAt: new Date().toISOString(),
+                imageData: currentImageData
+            };
+            
+            // Add to cards array
+            cards.push(card);
+            
+            // Save to local storage
+            saveCards();
+            
+            // Update UI
+            displayCards();
+            updateCardCount();
+            
+            // Clear form
+            clearForm();
+            
+            // Clear image
+            clearImage();
+            
+            // Show success message
+            showToast('Business card saved successfully!', 'success');
+        }
+
+        function clearForm() {
+            document.getElementById('companyName').value = '';
+            document.getElementById('contactPerson').value = '';
+            document.getElementById('jobTitle').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('website').value = '';
+            document.getElementById('address').value = '';
+        }
+
+        function clearImage() {
+            const preview = document.getElementById('previewImage');
+            const placeholder = document.querySelector('#imagePreview > div');
+            
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'block';
+            currentImageData = null;
+            document.getElementById('scanBtn').disabled = true;
+            document.getElementById('ocrSection').style.display = 'none';
+        }
+
+        function displayCards(filteredCards = null) {
+            const cardsList = document.getElementById('cardsList');
+            const cardsToDisplay = filteredCards || cards;
+            
+            // Clear list
+            cardsList.innerHTML = '';
+            
+            // Check if there are any cards
+            if (cardsToDisplay.length === 0) {
+                if (filteredCards) {
+                    // Show no results message
+                    cardsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <h3>No Matching Cards</h3>
+                            <p>Try a different search term</p>
+                        </div>
+                    `;
+                } else {
+                    // Show empty state
+                    cardsList.innerHTML = `
+                        <div class="empty-state" id="emptyState">
+                            <i class="fas fa-id-card"></i>
+                            <h3>No Cards Yet</h3>
+                            <p>Add your first business card to get started</p>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
+            // Display cards
+            cardsToDisplay.forEach((card, index) => {
+                const cardElement = createCardElement(card, index);
+                cardsList.appendChild(cardElement);
+            });
+        }
+
+        function createCardElement(card, index) {
+            const div = document.createElement('div');
+            div.className = 'card-item';
+            
+            // Format date
+            const date = new Date(card.createdAt);
+            const dateString = date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            div.innerHTML = `
+                <div class="card-header">
+                    <div>
+                        <div class="company-name">${card.companyName || 'No Company Name'}</div>
+                        <div class="contact-name">${card.contactPerson || 'No Contact Name'}</div>
+                    </div>
+                    <div style="font-size:12px; color:#999;">${dateString}</div>
+                </div>
+                
+                <div class="card-details">
+                    ${card.email ? `<div><i class="fas fa-envelope"></i> ${card.email}</div>` : ''}
+                    ${card.phone ? `<div><i class="fas fa-phone"></i> ${card.phone}</div>` : ''}
+                    ${card.jobTitle ? `<div><i class="fas fa-briefcase"></i> ${card.jobTitle}</div>` : ''}
+                </div>
+                
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-edit" onclick="editCard(${index})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-delete" onclick="deleteCard(${index})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function filterCards() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!searchInput) {
+                displayCards();
+                return;
+            }
+            
+            const filteredCards = cards.filter(card => {
+                return (
+                    (card.companyName && card.companyName.toLowerCase().includes(searchInput)) ||
+                    (card.contactPerson && card.contactPerson.toLowerCase().includes(searchInput)) ||
+                    (card.jobTitle && card.jobTitle.toLowerCase().includes(searchInput)) ||
+                    (card.email && card.email.toLowerCase().includes(searchInput)) ||
+                    (card.phone && card.phone.includes(searchInput)) ||
+                    (card.website && card.website.toLowerCase().includes(searchInput)) ||
+                    (card.address && card.address.toLowerCase().includes(searchInput))
+                );
+            });
+            
+            displayCards(filteredCards);
+        }
+
+        function editCard(index) {
+            const card = cards[index];
+            currentEditIndex = index;
+            
+            // Fill modal with card data
+            document.getElementById('editCompanyName').value = card.companyName || '';
+            document.getElementById('editContactPerson').value = card.contactPerson || '';
+            document.getElementById('editJobTitle').value = card.jobTitle || '';
+            document.getElementById('editEmail').value = card.email || '';
+            document.getElementById('editPhone').value = card.phone || '';
+            document.getElementById('editWebsite').value = card.website || '';
+            document.getElementById('editAddress').value = card.address || '';
+            
+            // Show modal
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function updateCard() {
+            if (currentEditIndex === -1) return;
+            
+            // Get updated values
+            const card = cards[currentEditIndex];
+            card.companyName = document.getElementById('editCompanyName').value.trim();
+            card.contactPerson = document.getElementById('editContactPerson').value.trim();
+            card.jobTitle = document.getElementById('editJobTitle').value.trim();
+            card.email = document.getElementById('editEmail').value.trim();
+            card.phone = document.getElementById('editPhone').value.trim();
+            card.website = document.getElementById('editWebsite').value.trim();
+            card.address = document.getElementById('editAddress').value.trim();
+            
+            // Save to local storage
+            saveCards();
+            
+            // Update UI
+            displayCards();
+            
+            // Close modal
+            closeEditModal();
+            
+            // Show success message
+            showToast('Card updated successfully!', 'success');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditIndex = -1;
+        }
+
+        function deleteCard(index) {
+            if (!confirm('Are you sure you want to delete this card?')) {
+                return;
+            }
+            
+            // Remove card from array
+            cards.splice(index, 1);
+            
+            // Save to local storage
+            saveCards();
+            
+            // Update UI
+            displayCards();
+            updateCardCount();
+            
+            // Show success message
+            showToast('Card deleted successfully!', 'success');
+        }
+
+        function updateCardCount() {
+            document.getElementById('totalCards').textContent = cards.length;
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            
+            // Set message and style
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            // Set color based on type
+            if (type === 'success') {
+                toast.style.background = '#28a745';
+            } else if (type === 'error') {
+                toast.style.background = '#dc3545';
+            } else if (type === 'info') {
+                toast.style.background = '#007bff';
+            } else if (type === 'warning') {
+                toast.style.background = '#ffc107';
+                toast.style.color = '#212529';
+            }
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            // Stop camera if active
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
 </body>
 </html>
