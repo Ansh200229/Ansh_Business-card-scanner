@@ -24,10 +24,56 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Left Panel - Input Form -->
+            <!-- Left Panel - Scanner & Form -->
             <div class="left-panel">
+                <!-- Scanner Section -->
+                <div class="scanner-section">
+                    <h2><i class="fas fa-camera"></i> Scan Card</h2>
+                    
+                    <div class="scanner-options">
+                        <button class="scanner-btn active" onclick="openCamera()">
+                            <i class="fas fa-camera"></i>
+                            <span>Use Camera</span>
+                        </button>
+                        <button class="scanner-btn" onclick="openFilePicker()">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload Image</span>
+                        </button>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    </div>
+                    
+                    <div class="image-preview" id="imagePreview">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-id-card"></i>
+                            <p>No image selected</p>
+                            <small>Use camera or upload image</small>
+                        </div>
+                        <img id="previewImage" style="display: none;">
+                    </div>
+                    
+                    <div class="scan-controls">
+                        <button class="btn-scan" onclick="startOCR()" id="scanBtn" disabled>
+                            <i class="fas fa-robot"></i> Scan Text
+                        </button>
+                        <button class="btn-clear-scan" onclick="clearImage()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                    
+                    <div class="ocr-progress" id="ocrProgress" style="display: none;">
+                        <div class="progress-text">
+                            <i class="fas fa-brain"></i> Scanning...
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
                 <div class="card-form">
-                    <h2><i class="fas fa-edit"></i> Add Business Card</h2>
+                    <h2><i class="fas fa-edit"></i> Card Details</h2>
                     
                     <div class="form-group">
                         <label><i class="fas fa-building"></i> Company Name</label>
@@ -98,12 +144,43 @@
         </div>
     </div>
 
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> Take Photo</h3>
+                <button class="modal-close" onclick="closeCamera()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="camera-container">
+                    <video id="cameraView" autoplay playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="scan-frame">
+                            <div class="corner top-left"></div>
+                            <div class="corner top-right"></div>
+                            <div class="corner bottom-left"></div>
+                            <div class="corner bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-controls">
+                    <button class="btn-capture" onclick="capturePhoto()">
+                        <i class="fas fa-camera"></i> Capture
+                    </button>
+                    <button class="btn-switch" onclick="switchCamera()" id="switchBtn">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-edit"></i> Edit Card</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -138,7 +215,7 @@
                     <button class="btn-update" onclick="updateCard()">
                         <i class="fas fa-check"></i> Update
                     </button>
-                    <button class="btn-cancel" onclick="closeModal()">
+                    <button class="btn-cancel" onclick="closeEditModal()">
                         <i class="fas fa-times"></i> Cancel
                     </button>
                 </div>
@@ -149,6 +226,8 @@
     <!-- Toast Notification -->
     <div id="toast"></div>
 
+    <!-- Tesseract.js -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
